@@ -1,18 +1,18 @@
-import { useState, useRef, type ChangeEvent } from 'react';
+import { useState, useRef, useEffect, type ChangeEvent } from 'react';
 import { useStore } from '../store/useStore';
 import { useNavigate } from 'react-router-dom';
-
-const MODELS = [
-  { type: 'Automático', dim: '38x14mm', price: 19.50, imgUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuDGO80G8SQt65AR4wUkYwUltfDs8LoaK32bXFlaJfKyT_FybVmrmvToGmAOZequsS-1f11vX_hKvryQ22HERLz5fn85KAq6YIeRKPj0b2jKIYjManWEE0GVi7Stz0wvlzudRraK1Z8ckuZt2--OmY3XuP5AQLk5mbwV42vk4NukD7Lo0XCbllu24IAHjaOG708LCn0K09vnaHo0oHg5p29HGk5Jyew0Fddc45hsEch8mJ3AqiaOWkWs46GQ1RSLZFrvxrrfImp9jMg" },
-  { type: 'Fechador', dim: '45x45mm', price: 28.00, imgUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuD9uzK6LWhBjUP--y4ZuRHJh8T7jJvVMzHrgIkZllVmBHZjhJfD2fzEa5arRBtvj1kzNdSnDJdm67pEDxRJQYk0maCpjODRSVoy6mjwrECSo2ki3E_LPMZJBaMcg8RkNVKMh49N9k3Ka4IbPLaRpygvHNLoFB7p6QO9eUHdWmPkGXMjKuNakmBw1lafVn61CnbA675EIjosRncT6CkKs5cQf74SUmFTFb167DF-fR5GyHLfTzCT0dCfr6zCKsxlYbcVywPV-Uas9rI" },
-  { type: 'Tradicional', dim: '60x40mm', price: 12.00, imgUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuC_B8aoEYQ_lMmCdugdqu_trQMnSWjcCfcnHLHGe1nkRvIk0R-gyzi0PQXawGKDBKywNl2mibxMcSzd8KLlcPFOJ5KapWEgI7tMvp6Zcm_XYrmhpvHCZinpIiRQ8hgpCgMiHHeYntEczPvBzP7Rpozff3eWMgfgD6h-h5hMxoMQmdMk2TnYk-Na6bZYifA-de_DQ8aFxV_gkIN_Ynqv24HleJM_t5_6EeCMChvwwFNyc7JpSZSMBZYY1mUoLriVXIx2ZZ5uA1QwfD8" },
-  { type: 'Portable', dim: '30x30mm', price: 22.00, imgUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuDGO80G8SQt65AR4wUkYwUltfDs8LoaK32bXFlaJfKyT_FybVmrmvToGmAOZequsS-1f11vX_hKvryQ22HERLz5fn85KAq6YIeRKPj0b2jKIYjManWEE0GVi7Stz0wvlzudRraK1Z8ckuZt2--OmY3XuP5AQLk5mbwV42vk4NukD7Lo0XCbllu24IAHjaOG708LCn0K09vnaHo0oHg5p29HGk5Jyew0Fddc45hsEch8mJ3AqiaOWkWs46GQ1RSLZFrvxrrfImp9jMg" }
-];
+import { db } from '../lib/firebase';
+import { collection, onSnapshot } from 'firebase/firestore';
 
 export default function ProductCustomizer() {
   const [text, setText] = useState("");
   const [fontFamily, setFontFamily] = useState("Montserrat");
-  const [model, setModel] = useState(MODELS[0]);
+  
+  const [products, setProducts] = useState<any[]>([]);
+  const [typographies, setTypographies] = useState<any[]>([]);
+  const [model, setModel] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
   const [logoData, setLogoData] = useState<string | null>(null);
   const [fontFile, setFontFile] = useState<File | null>(null);
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -20,6 +20,36 @@ export default function ProductCustomizer() {
   const logoInputRef = useRef<HTMLInputElement>(null);
   const { addToCart, currency, exchangeRates } = useStore();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const unsubProducts = onSnapshot(collection(db, 'products'), (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setProducts(data);
+      if (data.length > 0 && !model) {
+        setModel(data[0]);
+      }
+    });
+
+    const unsubFonts = onSnapshot(collection(db, 'typographies'), (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setTypographies(data);
+      data.forEach(async (font: any) => {
+        try {
+          const fontFace = new FontFace(font.fontFamily, `url(${font.fileUrl})`);
+          await fontFace.load();
+          document.fonts.add(fontFace);
+        } catch (e) {
+          console.error('Error loading dynamic font:', e);
+        }
+      });
+      setIsLoading(false);
+    });
+
+    return () => {
+      unsubProducts();
+      unsubFonts();
+    };
+  }, []);
 
   const formatPrice = (baseEurPrice: number) => {
     const rate = exchangeRates[currency] || 1;
@@ -59,6 +89,15 @@ export default function ProductCustomizer() {
     }
   };
 
+  if (isLoading || !model) {
+    return (
+      <div className="flex-grow flex flex-col items-center justify-center bg-surface-canvas min-h-[calc(100vh-80px)]">
+        <span className="material-symbols-outlined text-4xl text-primary animate-spin">refresh</span>
+        <p className="mt-4 font-bold text-primary">Cargando catálogo dinámico...</p>
+      </div>
+    );
+  }
+
   return (
     <main className="flex-grow flex flex-col md:flex-row max-w-[1920px] mx-auto w-full h-[calc(100vh-80px)] overflow-hidden">
       {/* Left Panel: Compact Controls */}
@@ -84,14 +123,14 @@ export default function ProductCustomizer() {
         <div className="space-y-2">
           <label className="block font-title-md text-sm font-bold text-primary">Tipografía</label>
           <div className="grid grid-cols-2 gap-2">
-            {["Montserrat", "Roboto Flex", "Playfair Display", "monospace"].map(font => (
+            {["Montserrat", "Roboto Flex", "Playfair Display", "monospace", ...typographies.map(t => t.fontFamily)].map(font => (
               <button 
                 key={font}
                 className={`p-2 border rounded-lg text-xs text-left hover:bg-surface-container bg-white transition-all ${fontFamily === font ? 'border-primary ring-1 ring-primary' : 'border-outline-variant'}`}
                 style={{ fontFamily: font }}
                 onClick={() => setFontFamily(font)}
               >
-                {font.split(' ')[0]}
+                {font.split('_')[0]}
               </button>
             ))}
           </div>
@@ -112,9 +151,9 @@ export default function ProductCustomizer() {
         <div className="space-y-2">
           <label className="block font-title-md text-sm font-bold text-primary">Tipo de Sello</label>
           <div className="grid grid-cols-1 gap-2">
-            {MODELS.map(m => (
+            {products.map((m: any) => (
               <button 
-                key={m.type}
+                key={m.id}
                 className={`flex items-center justify-between p-3 border rounded-lg transition-colors ${model.type === m.type ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-outline-variant bg-white hover:bg-surface-container-low'}`}
                 onClick={() => setModel(m)}
               >
