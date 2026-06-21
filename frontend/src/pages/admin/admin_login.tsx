@@ -28,13 +28,13 @@ export default function AdminLogin() {
     try {
       try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        setUser({ uid: userCredential.user.uid, email: userCredential.user.email, isAdmin: true });
+        setUser({ uid: userCredential.user.uid, email: userCredential.user.email, rol: 'admin' });
         setAdminStatus(true);
         navigate('/admin/dashboard');
       } catch (err: any) {
         if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
           const newUserCredential = await createUserWithEmailAndPassword(auth, email, password);
-          setUser({ uid: newUserCredential.user.uid, email: newUserCredential.user.email, isAdmin: true });
+          setUser({ uid: newUserCredential.user.uid, email: newUserCredential.user.email, rol: 'admin' });
           setAdminStatus(true);
           navigate('/admin/dashboard');
         } else {

@@ -4,6 +4,7 @@ import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from './lib/firebase';
 import { useStore, type Currency } from './store/useStore';
+import { useBcvRate } from './shared/api/useBcvRate';
 import logoCreaTuSello from './assets/logo-crea-tu-sello.svg';
 import HomePage from './pages/home_page';
 import AuthLogin from './pages/auth_login';
@@ -11,19 +12,25 @@ import ContactPage from './pages/contact_page';
 import ProductCustomizer from './pages/product_customizer';
 import InventoryManager from './pages/inventory_manager';
 import OrdersPanel from './pages/orders_panel';
+import CheckoutPage from './features/checkout/CheckoutPage';
 import AdminLogin from './pages/admin/admin_login';
 import AdminDashboard from './pages/admin/admin_dashboard';
 import ProfilePage from './pages/profile_page';
 import TermsPage from './pages/terms_page';
 import PrivacyPage from './pages/privacy_page';
 import ReturnsPage from './pages/returns_page';
+import OrderSuccessPage from './pages/order_success_page';
 import CartDrawer from './components/CartDrawer';
+import AdminRoute from './components/AdminRoute';
 
 function Navigation() {
   const { user, currency, setCurrency, setUser, cart, exchangeRates, openCart } = useStore();
   const [showProfile, setShowProfile] = useState(false);
   const [showCurrency, setShowCurrency] = useState(false);
   const navigate = useNavigate();
+
+  // Mount the global BCV rate listener
+  useBcvRate();
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -56,7 +63,9 @@ function Navigation() {
           <Link to="/" className="font-title-md text-on-surface-variant hover:text-secondary transition-colors duration-200">Home</Link>
           <Link to="/customizer" className="font-title-md text-secondary border-b-2 border-secondary pb-1">Catálogo</Link>
           <Link to="/contact" className="font-title-md text-on-surface-variant hover:text-secondary transition-colors duration-200">Contacto</Link>
-          <Link to="/admin/dashboard" className="font-title-md text-on-surface-variant hover:text-secondary transition-colors duration-200">Admin</Link>
+          {user?.rol === 'admin' && (
+            <Link to="/admin/dashboard" className="font-title-md text-on-surface-variant hover:text-secondary transition-colors duration-200">Admin</Link>
+          )}
         </div>
         <div className="flex items-center gap-4 md:gap-6 relative">
           
@@ -87,6 +96,9 @@ function Navigation() {
                 <div className="absolute top-12 right-0 bg-white border border-outline shadow-2xl rounded-xl py-2 w-48 flex flex-col z-[100]">
                   <div className="px-4 py-2 border-b border-outline-variant text-xs text-text-secondary truncate">{user.email}</div>
                   <Link to="/profile" onClick={() => setShowProfile(false)} className="px-4 py-3 text-left hover:bg-surface-container-low flex items-center gap-2 text-primary font-bold text-sm"><span className="material-symbols-outlined text-[18px]">person</span> Mi Perfil</Link>
+                  {user.rol === 'admin' && (
+                    <Link to="/admin/dashboard" onClick={() => setShowProfile(false)} className="px-4 py-3 text-left hover:bg-surface-container-low flex items-center gap-2 text-primary font-bold text-sm"><span className="material-symbols-outlined text-[18px]">admin_panel_settings</span> Panel Administrativo</Link>
+                  )}
                   <button onClick={handleLogout} className="px-4 py-3 text-left hover:bg-error/10 text-error flex items-center gap-2 font-bold text-sm"><span className="material-symbols-outlined text-[18px]">logout</span> Cerrar Sesión</button>
                 </div>
               )}
@@ -160,9 +172,24 @@ export default function App() {
   const { setUser, setAuthInitialized, setExchangeRates } = useStore();
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        setUser({ uid: firebaseUser.uid, email: firebaseUser.email });
+        try {
+          const userDoc = await getDoc(doc(db, 'usuarios', firebaseUser.uid));
+          let rol = 'user';
+          if (userDoc.exists()) {
+            rol = userDoc.data().rol || 'user';
+          }
+          // Hardcode for the CEO
+          if (firebaseUser.email === 'admin@jomstudio.com') {
+            rol = 'admin';
+          }
+          setUser({ uid: firebaseUser.uid, email: firebaseUser.email, rol });
+        } catch (err) {
+          console.error("Error obteniendo rol:", err);
+          let fallbackRol = firebaseUser.email === 'admin@jomstudio.com' ? 'admin' : 'user';
+          setUser({ uid: firebaseUser.uid, email: firebaseUser.email, rol: fallbackRol });
+        }
       } else {
         setUser(null);
       }
@@ -221,13 +248,17 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/customizer" element={<ProductCustomizer />} />
+          <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/success" element={<OrderSuccessPage />} />
           <Route path="/login" element={<AuthLogin />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/admin/inventory" element={<InventoryManager />} />
-          <Route path="/admin/orders" element={<OrdersPanel />} />
           <Route path="/mi-negocio-admin" element={<AdminLogin />} />
-          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route element={<AdminRoute />}>
+            <Route path="/admin/inventory" element={<InventoryManager />} />
+            <Route path="/admin/orders" element={<OrdersPanel />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          </Route>
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/returns" element={<ReturnsPage />} />

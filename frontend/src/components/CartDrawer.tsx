@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useStore } from '../store/useStore';
 import { useNavigate } from 'react-router-dom';
 
 const CartDrawer: React.FC = () => {
-  const { cart, isCartOpen, closeCart, removeFromCart, updateQuantity, clearCart, currency, exchangeRates } = useStore();
+  const { cart, isCartOpen, closeCart, removeFromCart, updateQuantity, currency, exchangeRates } = useStore();
   const navigate = useNavigate();
-  const [isProcessing, setIsProcessing] = useState(false);
 
   const subtotal = cart.reduce((acc, item) => acc + (item.model.price * item.quantity), 0);
   
@@ -17,103 +16,66 @@ const CartDrawer: React.FC = () => {
     }
   };
 
-  const handleCheckout = async () => {
-    if (cart.length === 0) return;
-    setIsProcessing(true);
-    
-    try {
-      const processedItems = await Promise.all(cart.map(async (item) => {
-        return {
-          id: item.id,
-          modelName: item.model.name || item.model.type,
-          quantity: item.quantity,
-          price: item.model.price,
-          unitPriceDisplay: getDisplayPrice(item.model.price),
-          subtotalDisplay: getDisplayPrice(item.model.price * item.quantity),
-          text: item.text,
-          fontFamily: item.fontFamily
-        };
-      }));
-
-      const totalDisplay = getDisplayPrice(subtotal);
-
-      let message = `*¡Nuevo Pedido desde Crea Tu Sello!*\n\n`;
-      message += `*🛒 Resumen del Pedido:*\n\n`;
-
-      processedItems.forEach((item, index) => {
-        message += `*${index + 1}. ${item.modelName}*\n`;
-        message += `   - Cantidad: ${item.quantity}\n`;
-        message += `   - Precio Unitario: ${item.unitPriceDisplay}\n`;
-        message += `   - Subtotal: ${item.subtotalDisplay}\n`;
-        if (item.text) message += `   - Texto: "${item.text}"\n`;
-        if (item.fontFamily) message += `   - Tipografía: ${item.fontFamily}\n`;
-        message += `\n`;
-      });
-
-      message += `*💰 TOTAL ESTIMADO: ${totalDisplay}*\n`;
-      message += `\n_A la espera de confirmación y detalles de envío._`;
-
-      const encodedMessage = encodeURIComponent(message);
-      const whatsappUrl = `https://wa.me/584242699863?text=${encodedMessage}`;
-      
-      clearCart();
-      closeCart();
-      window.open(whatsappUrl, '_blank');
-      navigate('/');
-    } catch (error) {
-      console.error("Error processing checkout:", error);
-      alert("Hubo un error al procesar tu pedido. Por favor intenta de nuevo.");
-    } finally {
-      setIsProcessing(false);
-    }
+  const handleCheckout = () => {
+    closeCart();
+    navigate('/checkout');
   };
 
   if (!isCartOpen) return null;
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop con Blur y oscurecimiento profundo */}
       <div 
-        className="fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity backdrop-blur-sm"
+        className="fixed inset-0 bg-black/60 z-[60] backdrop-blur-md transition-opacity duration-300"
         onClick={closeCart}
       />
 
-      {/* Drawer */}
-      <div className={`fixed top-0 right-0 h-full w-full sm:w-[400px] bg-white shadow-2xl z-50 transform transition-transform duration-300 flex flex-col ${isCartOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      {/* Drawer interactivo con Cubic Bezier y sombra masiva */}
+      <div 
+        className={`fixed top-0 right-0 h-full w-full sm:w-[450px] bg-white shadow-[0_0_50px_rgba(0,0,0,0.3)] z-[70] transform transition-transform flex flex-col`}
+        style={{
+          transitionDuration: '400ms',
+          transitionTimingFunction: 'cubic-bezier(0.25, 1, 0.5, 1)',
+          transform: isCartOpen ? 'translateX(0)' : 'translateX(100%)'
+        }}
+      >
         
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-surface-container">
-          <div className="flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-2xl">shopping_cart</span>
-            <h2 className="font-title-lg text-xl font-bold text-on-surface">Tu Carrito</h2>
+        {/* Header Premium */}
+        <div className="flex items-center justify-between p-6 border-b border-surface-container bg-surface-canvas">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+              <span className="material-symbols-outlined text-2xl">shopping_cart</span>
+            </div>
+            <h2 className="font-title-lg text-2xl font-bold text-on-surface">Tu Carrito</h2>
             {cart.length > 0 && (
-              <span className="bg-primary text-white text-xs font-bold px-2 py-1 rounded-full ml-2">
+              <span className="bg-primary text-white text-xs font-bold px-2 py-1 rounded-full shadow-sm">
                 {cart.length}
               </span>
             )}
           </div>
           <button 
             onClick={closeCart}
-            className="p-2 hover:bg-surface-canvas rounded-full transition-colors text-text-secondary hover:text-error"
+            className="w-10 h-10 flex items-center justify-center rounded-full hover:bg-error/10 text-text-secondary hover:text-error transition-colors duration-200"
           >
             <span className="material-symbols-outlined">close</span>
           </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6 bg-surface-canvas">
+        <div className="flex-1 overflow-y-auto p-6 bg-surface-bright">
           {cart.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
-              <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-sm">
-                <span className="material-symbols-outlined text-5xl text-outline">production_quantity_limits</span>
+            <div className="flex flex-col items-center justify-center h-full text-center space-y-6 opacity-80">
+              <div className="w-32 h-32 bg-surface-container rounded-full flex items-center justify-center shadow-inner">
+                <span className="material-symbols-outlined text-6xl text-outline-variant">production_quantity_limits</span>
               </div>
               <div>
-                <p className="font-title-md text-lg text-on-surface">Tu carrito está vacío</p>
-                <p className="text-text-secondary mt-1">¡Explora nuestro catálogo y personaliza tu sello ideal!</p>
+                <p className="font-title-lg text-xl text-on-surface font-bold">Tu carrito está vacío</p>
+                <p className="text-text-secondary mt-2 max-w-[250px] mx-auto">¡Explora nuestro catálogo y personaliza tu sello ideal con la mejor calidad!</p>
               </div>
               <button 
-                onClick={() => { closeCart(); navigate('/catalog'); }}
-                className="btn btn-primary mt-4"
+                onClick={() => { closeCart(); navigate('/customizer'); }}
+                className="mt-4 px-8 py-3 bg-primary text-white rounded-full font-bold shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all"
               >
                 Ver Catálogo
               </button>
@@ -121,39 +83,41 @@ const CartDrawer: React.FC = () => {
           ) : (
             <div className="space-y-4">
               {cart.map((item) => (
-                <div key={item.id} className="bg-white p-4 rounded-xl shadow-sm border border-surface-container flex gap-4 relative group">
-                  
+                <div 
+                  key={item.id} 
+                  className="bg-white p-4 rounded-2xl shadow-sm hover:shadow-md hover:border-primary/30 border border-transparent transition-all duration-300 flex gap-4 relative group"
+                >
                   {/* Image */}
-                  <div className="w-20 h-20 bg-surface-canvas rounded-lg flex items-center justify-center flex-shrink-0">
+                  <div className="w-24 h-24 bg-surface-canvas rounded-xl flex items-center justify-center flex-shrink-0 border border-surface-container overflow-hidden">
                     <img 
                       src={item.logoDataUrl || item.model.imgUrl} 
                       alt={item.model.name || item.model.type} 
-                      className="w-full h-full object-contain mix-blend-multiply p-2"
+                      className="w-full h-full object-contain mix-blend-multiply p-2 transition-transform duration-300 group-hover:scale-110"
                     />
                   </div>
 
                   {/* Details */}
-                  <div className="flex-1 flex flex-col justify-between">
+                  <div className="flex-1 flex flex-col justify-between py-1 pr-6">
                     <div>
-                      <h3 className="font-bold text-sm text-on-surface line-clamp-2 pr-6">{item.model.name || item.model.type}</h3>
-                      <p className="text-primary font-bold text-sm mt-1">{getDisplayPrice(item.model.price)}</p>
+                      <h3 className="font-bold text-sm text-on-surface line-clamp-2 leading-tight">{item.model.name || item.model.type}</h3>
+                      <p className="text-primary font-bold text-base mt-1">{getDisplayPrice(item.model.price)}</p>
                     </div>
 
                     {/* Controls */}
                     <div className="flex items-center justify-between mt-3">
-                      <div className="flex items-center bg-surface-canvas rounded-lg overflow-hidden border border-surface-container">
+                      <div className="flex items-center bg-surface-canvas rounded-lg overflow-hidden border border-surface-container shadow-sm">
                         <button 
                           onClick={() => updateQuantity(item.id, Math.max(1, item.quantity - 1))}
-                          className="w-8 h-8 flex items-center justify-center hover:bg-white transition-colors text-text-secondary"
+                          className="w-8 h-8 flex items-center justify-center hover:bg-primary hover:text-white transition-colors text-text-secondary"
                         >
-                          <span className="material-symbols-outlined text-sm">remove</span>
+                          <span className="material-symbols-outlined text-[16px]">remove</span>
                         </button>
-                        <span className="w-8 text-center font-bold text-sm text-on-surface">{item.quantity}</span>
+                        <span className="w-10 text-center font-bold text-sm text-on-surface">{item.quantity}</span>
                         <button 
                           onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          className="w-8 h-8 flex items-center justify-center hover:bg-white transition-colors text-text-secondary"
+                          className="w-8 h-8 flex items-center justify-center hover:bg-primary hover:text-white transition-colors text-text-secondary"
                         >
-                          <span className="material-symbols-outlined text-sm">add</span>
+                          <span className="material-symbols-outlined text-[16px]">add</span>
                         </button>
                       </div>
                     </div>
@@ -162,10 +126,10 @@ const CartDrawer: React.FC = () => {
                   {/* Delete Button */}
                   <button 
                     onClick={() => removeFromCart(item.id)}
-                    className="absolute top-3 right-3 text-outline hover:text-error transition-colors p-1"
+                    className="absolute top-4 right-4 w-8 h-8 rounded-full flex items-center justify-center bg-surface-canvas text-text-secondary hover:bg-error hover:text-white transition-all shadow-sm opacity-0 group-hover:opacity-100"
                     title="Eliminar producto"
                   >
-                    <span className="material-symbols-outlined text-lg">delete</span>
+                    <span className="material-symbols-outlined text-[18px]">delete</span>
                   </button>
                 </div>
               ))}
@@ -175,29 +139,23 @@ const CartDrawer: React.FC = () => {
 
         {/* Footer */}
         {cart.length > 0 && (
-          <div className="p-6 bg-white border-t border-surface-container shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)]">
+          <div className="p-6 bg-white border-t border-surface-container shadow-[0_-10px_30px_rgba(0,0,0,0.05)] z-10 relative">
             <div className="flex justify-between items-center mb-6">
-              <span className="font-bold text-text-secondary">Total a pagar:</span>
-              <span className="font-title-lg text-2xl font-bold text-primary">{getDisplayPrice(subtotal)}</span>
+              <span className="font-bold text-text-secondary text-lg">Total a pagar:</span>
+              <span className="font-title-lg text-3xl font-bold text-primary">{getDisplayPrice(subtotal)}</span>
             </div>
             
             <button
               onClick={handleCheckout}
-              disabled={isProcessing}
-              className="w-full btn btn-primary flex items-center justify-center gap-2 py-4 text-lg"
+              className="w-full bg-primary text-white flex items-center justify-center gap-3 py-4 rounded-xl font-bold text-lg shadow-[0_8px_20px_rgba(var(--color-primary),0.3)] hover:shadow-[0_12px_25px_rgba(var(--color-primary),0.4)] hover:-translate-y-1 active:translate-y-0 active:scale-95 transition-all duration-200"
             >
-              {isProcessing ? (
-                <span className="material-symbols-outlined animate-spin">sync</span>
-              ) : (
-                <>
-                  <span className="material-symbols-outlined">shopping_bag</span>
-                  Completar Pedido
-                </>
-              )}
+              <span className="material-symbols-outlined">shopping_bag</span>
+              Completar Pedido Seguro
             </button>
-            <p className="text-center text-xs text-text-secondary mt-3">
-              Serás redirigido a WhatsApp para coordinar el pago y envío.
-            </p>
+            <div className="flex items-center justify-center gap-1 mt-4 text-xs text-text-secondary">
+              <span className="material-symbols-outlined text-[14px] text-primary">lock</span> 
+              Tus datos están protegidos y cifrados end-to-end
+            </div>
           </div>
         )}
       </div>

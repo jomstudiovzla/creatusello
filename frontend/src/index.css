@@ -2,6 +2,42 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  --color-primary: #00236f;
+  --color-secondary: #009688;
+  --color-error: #b00020;
+  --color-surface: #ffffff;
+  --color-background: #f7f9fb;
+}
+
+.stamp-card-30mm {
+  width: 113px; /* approx 30mm on 96dpi screen */
+  height: 113px;
+  max-width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  transition: all 0.3s ease;
+  background-color: var(--color-surface);
+  border: 1px solid #e0e3e5;
+  border-radius: 8px;
+}
+
+.stamp-card-30mm:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 35, 111, 0.15);
+}
+
+.stamp-text-truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 90%;
+}
+
 .material-symbols-outlined {
     font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }

@@ -1,12 +1,25 @@
 import { useState, useEffect, type ChangeEvent, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { db, storage } from '../lib/firebase';
+import { db } from '../lib/firebase';
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDocs, writeBatch } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import ExcelJS from 'exceljs';
 import { resolveImageUrl } from '../utils/imageUtils';
+
+export const DEFAULT_PRODUCTS = [
+  { type: 'Automático', name: 'Sello Automático Profesional', category: 'Sellos', dim: '38x14mm', price: 19.50, imgUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuDGO80G8SQt65AR4wUkYwUltfDs8LoaK32bXFlaJfKyT_FybVmrmvToGmAOZequsS-1f11vX_hKvryQ22HERLz5fn85KAq6YIeRKPj0b2jKIYjManWEE0GVi7Stz0wvlzudRraK1Z8ckuZt2--OmY3XuP5AQLk5mbwV42vk4NukD7Lo0XCbllu24IAHjaOG708LCn0K09vnaHo0oHg5p29HGk5Jyew0Fddc45hsEch8mJ3AqiaOWkWs46GQ1RSLZFrvxrrfImp9jMg", stock: 100, status: 'Óptimo', sku: 'AUTO-01', desc: 'Sello automático autoentintable ideal para uso continuo.' },
+  { type: 'Fechador', name: 'Sello Fechador Administrativo', category: 'Sellos', dim: '45x45mm', price: 28.00, imgUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuD9uzK6LWhBjUP--y4ZuRHJh8T7jJvVMzHrgIkZllVmBHZjhJfD2fzEa5arRBtvj1kzNdSnDJdm67pEDxRJQYk0maCpjODRSVoy6mjwrECSo2ki3E_LPMZJBaMcg8RkNVKMh49N9k3Ka4IbPLaRpygvHNLoFB7p6QO9eUHdWmPkGXMjKuNakmBw1lafVn61CnbA675EIjosRncT6CkKs5cQf74SUmFTFb167DF-fR5GyHLfTzCT0dCfr6zCKsxlYbcVywPV-Uas9rI", stock: 50, status: 'Óptimo', sku: 'FECH-01', desc: 'Sello con fechas rotativas para documentación.' },
+  { type: 'Tradicional', name: 'Sello Tradicional de Madera', category: 'Sellos', dim: '60x40mm', price: 12.00, imgUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuC_B8aoEYQ_lMmCdugdqu_trQMnSWjcCfcnHLHGe1nkRvIk0R-gyzi0PQXawGKDBKywNl2mibxMcSzd8KLlcPFOJ5KapWEgI7tMvp6Zcm_XYrmhpvHCZinpIiRQ8hgpCgMiHHeYntEczPvBzP7Rpozff3eWMgfgD6h-h5hMxoMQmdMk2TnYk-Na6bZYifA-de_DQ8aFxV_gkIN_Ynqv24HleJM_t5_6EeCMChvwwFNyc7JpSZSMBZYY1mUoLriVXIx2ZZ5uA1QwfD8", stock: 10, status: 'Bajo Stock', sku: 'TRAD-01', desc: 'Sello clásico de madera, requiere almohadilla externa.' },
+  { type: 'Portable', name: 'Sello Portable de Bolsillo', category: 'Sellos', dim: '30x30mm', price: 22.00, imgUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuDGO80G8SQt65AR4wUkYwUltfDs8LoaK32bXFlaJfKyT_FybVmrmvToGmAOZequsS-1f11vX_hKvryQ22HERLz5fn85KAq6YIeRKPj0b2jKIYjManWEE0GVi7Stz0wvlzudRraK1Z8ckuZt2--OmY3XuP5AQLk5mbwV42vk4NukD7Lo0XCbllu24IAHjaOG708LCn0K09vnaHo0oHg5p29HGk5Jyew0Fddc45hsEch8mJ3AqiaOWkWs46GQ1RSLZFrvxrrfImp9jMg", stock: 75, status: 'Óptimo', sku: 'PORT-01', desc: 'Diseño compacto y plegable, llévalo a todas partes.' },
+  { type: 'Almohadilla Negra', name: 'Almohadilla de Tinta Negra', category: 'Repuestos', dim: 'N/A', price: 4.50, imgUrl: "/creatusello/repuestos/almohadilla_tinta_negra.png", stock: 200, status: 'Óptimo', sku: 'REP-ALM-01', desc: 'Almohadilla de recambio con tinta negra para sellos automáticos estándar.' },
+  { type: 'Almohadilla Bicolor', name: 'Almohadilla Bicolor (Azul/Rojo)', category: 'Repuestos', dim: 'N/A', price: 5.50, imgUrl: "/creatusello/repuestos/almohadilla_bicolor.png", stock: 150, status: 'Óptimo', sku: 'REP-ALM-02', desc: 'Almohadilla de doble color ideal para sellos fechadores.' },
+  { type: 'Goma Grabada', name: 'Goma Personalizada Grabada', category: 'Repuestos', dim: 'Variable', price: 9.00, imgUrl: "/creatusello/repuestos/goma_grabada.png", stock: 500, status: 'Óptimo', sku: 'REP-GOM-01', desc: 'Plantilla de goma cortada a láser con texto o logo personalizado para reemplazo.' },
+  { type: 'Tinta Negra', name: 'Frasco de Tinta Líquida Negra 30ml', category: 'Repuestos', dim: '30ml', price: 6.00, imgUrl: "/creatusello/repuestos/frasco_tinta_negra.png", stock: 80, status: 'Óptimo', sku: 'REP-TIN-01', desc: 'Tinta especial para recargar almohadillas de sellos manuales y automáticos.' },
+  { type: 'Base Madera', name: 'Base/Montura de Madera Sola', category: 'Repuestos', dim: '60x40mm', price: 5.00, imgUrl: "/creatusello/repuestos/base_madera.png", stock: 30, status: 'Óptimo', sku: 'REP-BAS-01', desc: 'Solo la montura de madera con mango ergonómico sin goma.' },
+  { type: 'Lanyard', name: 'Lanyard Corporativo Premium', category: 'Lanyards', dim: '90x2cm', price: 3.50, imgUrl: "/creatusello/repuestos/lanyard_corporativo.png", stock: 300, status: 'Óptimo', sku: 'LAN-CORP-01', desc: 'Correa para el cuello con mosquetón metálico, ideal para portar tu sello.' },
+  { type: 'Dije Médico', name: 'Dije Médico (Estetoscopio)', category: 'Accesorios', dim: '2x2cm', price: 2.00, imgUrl: "/creatusello/repuestos/dije_medico.png", stock: 150, status: 'Óptimo', sku: 'ACC-DIJ-MED', desc: 'Elegante dije plateado para personalizar tu sello, con temática médica.' }
+];
 
 interface Product {
   id: string;
@@ -66,21 +79,36 @@ export default function InventoryManager() {
     try {
       setIsUploadingFont(true);
       const fontName = file.name.split('.')[0];
-      const storageRef = ref(storage, `fonts/${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
       
-      await addDoc(collection(db, 'typographies'), {
-        name: fontName,
-        fileUrl: url,
-        fontFamily: `CustomFont_${Date.now()}`
-      });
-      alert("Tipografía subida exitosamente.");
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        try {
+          const base64Url = event.target?.result as string;
+          await addDoc(collection(db, 'typographies'), {
+            name: fontName,
+            fileUrl: base64Url,
+            fontFamily: `CustomFont_${Date.now()}`
+          });
+          alert("Tipografía subida exitosamente.");
+        } catch (err) {
+          console.error(err);
+          alert("Error guardando tipografía en la base de datos.");
+        } finally {
+          setIsUploadingFont(false);
+          e.target.value = '';
+        }
+      };
+      reader.onerror = () => {
+        alert("Error al leer el archivo de la tipografía.");
+        setIsUploadingFont(false);
+        e.target.value = '';
+      };
+      reader.readAsDataURL(file);
     } catch (err) {
       console.error(err);
-      alert("Error al subir la tipografía.");
-    } finally {
+      alert("Error inesperado al procesar la tipografía.");
       setIsUploadingFont(false);
+      e.target.value = '';
     }
   };
 
@@ -110,17 +138,48 @@ export default function InventoryManager() {
     }
 
     setIsUploadingImage(true);
-    try {
-      const imgRef = ref(storage, `products/img_${Date.now()}_${file.name}`);
-      await uploadBytes(imgRef, file);
-      const url = await getDownloadURL(imgRef);
-      setFormData(prev => ({ ...prev, imgUrl: url }));
-    } catch (err) {
-      console.error(err);
-      alert('Error al subir la imagen. Verifica tu conexión.');
-    } finally {
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_WIDTH = 800;
+        const MAX_HEIGHT = 800;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_WIDTH) {
+            height *= MAX_WIDTH / width;
+            width = MAX_WIDTH;
+          }
+        } else {
+          if (height > MAX_HEIGHT) {
+            width *= MAX_HEIGHT / height;
+            height = MAX_HEIGHT;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0, width, height);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85); // 85% quality compression
+          setFormData(prev => ({ ...prev, imgUrl: dataUrl }));
+        } else {
+          alert("Error procesando imagen.");
+        }
+        setIsUploadingImage(false);
+      };
+      img.src = event.target?.result as string;
+    };
+    reader.onerror = () => {
+      alert("Error al leer la imagen.");
       setIsUploadingImage(false);
-    }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleSaveProduct = async (e: FormEvent) => {
@@ -129,17 +188,18 @@ export default function InventoryManager() {
     try {
       let finalImgUrl = formData.imgUrl;
 
-      // Auto-download external URLs and upload to Firebase
-      if (finalImgUrl && finalImgUrl.startsWith('http') && !finalImgUrl.includes('firebasestorage')) {
+      // Auto-download external URLs and convert to Base64
+      if (finalImgUrl && finalImgUrl.startsWith('http') && !finalImgUrl.startsWith('data:')) {
         try {
           const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(finalImgUrl)}`;
           const response = await fetch(proxyUrl);
           if (response.ok) {
             const blob = await response.blob();
-            const ext = blob.type.split('/')[1] || 'png';
-            const imgRef = ref(storage, `products/url_import_${Date.now()}.${ext}`);
-            await uploadBytes(imgRef, blob);
-            finalImgUrl = await getDownloadURL(imgRef);
+            const reader = new FileReader();
+            finalImgUrl = await new Promise((resolve) => {
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.readAsDataURL(blob);
+            });
           }
         } catch (downloadErr) {
           console.warn("No se pudo descargar la imagen externa, se mantendrá la URL original.", downloadErr);
@@ -208,17 +268,18 @@ export default function InventoryManager() {
       
       let rawUrl = row.Imagen || row.imgUrl || '';
       
-      // Auto-download external URLs and upload to Firebase during CSV/Excel import
-      if (rawUrl && rawUrl.startsWith('http') && !rawUrl.includes('firebasestorage')) {
+      // Auto-download external URLs and convert to Base64 during CSV/Excel import
+      if (rawUrl && rawUrl.startsWith('http') && !rawUrl.startsWith('data:')) {
         try {
           const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(rawUrl)}`;
           const response = await fetch(proxyUrl);
           if (response.ok) {
             const blob = await response.blob();
-            const ext = blob.type.split('/')[1] || 'png';
-            const imgRef = ref(storage, `products/csv_import_${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`);
-            await uploadBytes(imgRef, blob);
-            rawUrl = await getDownloadURL(imgRef);
+            const reader = new FileReader();
+            rawUrl = await new Promise((resolve) => {
+              reader.onloadend = () => resolve(reader.result as string);
+              reader.readAsDataURL(blob);
+            });
           }
         } catch(err) {
           console.warn("Falló la descarga de imagen para la fila, se conservará la URL original", row, err);
@@ -273,11 +334,13 @@ export default function InventoryManager() {
             if (jsonIndex >= 0 && jsonIndex < jsonData.length) {
               const imgMedia = workbookExcelJS.getImage(Number(image.imageId));
               if (imgMedia && imgMedia.buffer) {
-                // Upload to Firebase
+                // Convert to Base64
                 const blob = new Blob([imgMedia.buffer], { type: `image/${imgMedia.extension}` });
-                const imgRef = ref(storage, `products/excel_import_${Date.now()}_row${jsonIndex}.${imgMedia.extension}`);
-                await uploadBytes(imgRef, blob);
-                const url = await getDownloadURL(imgRef);
+                const reader = new FileReader();
+                const url = await new Promise<string>((resolve) => {
+                  reader.onloadend = () => resolve(reader.result as string);
+                  reader.readAsDataURL(blob);
+                });
                 
                 // Assign URL to jsonData
                 jsonData[jsonIndex].imgUrl = url;
@@ -330,20 +393,7 @@ export default function InventoryManager() {
       });
       await batch.commit();
 
-      const MODELS = [
-        { type: 'Automático', name: 'Sello Automático Profesional', category: 'Sellos', dim: '38x14mm', price: 19.50, imgUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuDGO80G8SQt65AR4wUkYwUltfDs8LoaK32bXFlaJfKyT_FybVmrmvToGmAOZequsS-1f11vX_hKvryQ22HERLz5fn85KAq6YIeRKPj0b2jKIYjManWEE0GVi7Stz0wvlzudRraK1Z8ckuZt2--OmY3XuP5AQLk5mbwV42vk4NukD7Lo0XCbllu24IAHjaOG708LCn0K09vnaHo0oHg5p29HGk5Jyew0Fddc45hsEch8mJ3AqiaOWkWs46GQ1RSLZFrvxrrfImp9jMg", stock: 100, status: 'Óptimo', sku: 'AUTO-01', desc: 'Sello automático autoentintable ideal para uso continuo.' },
-        { type: 'Fechador', name: 'Sello Fechador Administrativo', category: 'Sellos', dim: '45x45mm', price: 28.00, imgUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuD9uzK6LWhBjUP--y4ZuRHJh8T7jJvVMzHrgIkZllVmBHZjhJfD2fzEa5arRBtvj1kzNdSnDJdm67pEDxRJQYk0maCpjODRSVoy6mjwrECSo2ki3E_LPMZJBaMcg8RkNVKMh49N9k3Ka4IbPLaRpygvHNLoFB7p6QO9eUHdWmPkGXMjKuNakmBw1lafVn61CnbA675EIjosRncT6CkKs5cQf74SUmFTFb167DF-fR5GyHLfTzCT0dCfr6zCKsxlYbcVywPV-Uas9rI", stock: 50, status: 'Óptimo', sku: 'FECH-01', desc: 'Sello con fechas rotativas para documentación.' },
-        { type: 'Tradicional', name: 'Sello Tradicional de Madera', category: 'Sellos', dim: '60x40mm', price: 12.00, imgUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuC_B8aoEYQ_lMmCdugdqu_trQMnSWjcCfcnHLHGe1nkRvIk0R-gyzi0PQXawGKDBKywNl2mibxMcSzd8KLlcPFOJ5KapWEgI7tMvp6Zcm_XYrmhpvHCZinpIiRQ8hgpCgMiHHeYntEczPvBzP7Rpozff3eWMgfgD6h-h5hMxoMQmdMk2TnYk-Na6bZYifA-de_DQ8aFxV_gkIN_Ynqv24HleJM_t5_6EeCMChvwwFNyc7JpSZSMBZYY1mUoLriVXIx2ZZ5uA1QwfD8", stock: 10, status: 'Bajo Stock', sku: 'TRAD-01', desc: 'Sello clásico de madera, requiere almohadilla externa.' },
-        { type: 'Portable', name: 'Sello Portable de Bolsillo', category: 'Sellos', dim: '30x30mm', price: 22.00, imgUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuDGO80G8SQt65AR4wUkYwUltfDs8LoaK32bXFlaJfKyT_FybVmrmvToGmAOZequsS-1f11vX_hKvryQ22HERLz5fn85KAq6YIeRKPj0b2jKIYjManWEE0GVi7Stz0wvlzudRraK1Z8ckuZt2--OmY3XuP5AQLk5mbwV42vk4NukD7Lo0XCbllu24IAHjaOG708LCn0K09vnaHo0oHg5p29HGk5Jyew0Fddc45hsEch8mJ3AqiaOWkWs46GQ1RSLZFrvxrrfImp9jMg", stock: 75, status: 'Óptimo', sku: 'PORT-01', desc: 'Diseño compacto y plegable, llévalo a todas partes.' },
-        { type: 'Almohadilla Negra', name: 'Almohadilla de Tinta Negra', category: 'Repuestos', dim: 'N/A', price: 4.50, imgUrl: "/creatusello/repuestos/almohadilla_tinta_negra.png", stock: 200, status: 'Óptimo', sku: 'REP-ALM-01', desc: 'Almohadilla de recambio con tinta negra para sellos automáticos estándar.' },
-        { type: 'Almohadilla Bicolor', name: 'Almohadilla Bicolor (Azul/Rojo)', category: 'Repuestos', dim: 'N/A', price: 5.50, imgUrl: "/creatusello/repuestos/almohadilla_bicolor.png", stock: 150, status: 'Óptimo', sku: 'REP-ALM-02', desc: 'Almohadilla de doble color ideal para sellos fechadores.' },
-        { type: 'Goma Grabada', name: 'Goma Personalizada Grabada', category: 'Repuestos', dim: 'Variable', price: 9.00, imgUrl: "/creatusello/repuestos/goma_grabada.png", stock: 500, status: 'Óptimo', sku: 'REP-GOM-01', desc: 'Plantilla de goma cortada a láser con texto o logo personalizado para reemplazo.' },
-        { type: 'Tinta Negra', name: 'Frasco de Tinta Líquida Negra 30ml', category: 'Repuestos', dim: '30ml', price: 6.00, imgUrl: "/creatusello/repuestos/frasco_tinta_negra.png", stock: 80, status: 'Óptimo', sku: 'REP-TIN-01', desc: 'Tinta especial para recargar almohadillas de sellos manuales y automáticos.' },
-        { type: 'Base Madera', name: 'Base/Montura de Madera Sola', category: 'Repuestos', dim: '60x40mm', price: 5.00, imgUrl: "/creatusello/repuestos/base_madera.png", stock: 30, status: 'Óptimo', sku: 'REP-BAS-01', desc: 'Solo la montura de madera con mango ergonómico sin goma.' },
-        { type: 'Lanyard', name: 'Lanyard Corporativo Premium', category: 'Lanyards', dim: '90x2cm', price: 3.50, imgUrl: "/creatusello/repuestos/lanyard_corporativo.png", stock: 300, status: 'Óptimo', sku: 'LAN-CORP-01', desc: 'Correa para el cuello con mosquetón metálico, ideal para portar tu sello.' },
-        { type: 'Dije Médico', name: 'Dije Médico (Estetoscopio)', category: 'Accesorios', dim: '2x2cm', price: 2.00, imgUrl: "/creatusello/repuestos/dije_medico.png", stock: 150, status: 'Óptimo', sku: 'ACC-DIJ-MED', desc: 'Elegante dije plateado para personalizar tu sello, con temática médica.' }
-      ];
-      for (const m of MODELS) {
+      for (const m of DEFAULT_PRODUCTS) {
         await addDoc(collection(db, 'products'), m);
       }
       alert("Catálogo restaurado.");

@@ -3,7 +3,7 @@ import { create } from 'zustand';
 export interface User {
   uid: string;
   email: string | null;
-  isAdmin?: boolean;
+  rol?: string;
 }
 
 export interface CartItem {

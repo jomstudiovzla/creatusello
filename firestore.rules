@@ -2,9 +2,12 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     
-    // Función para verificar si el usuario es el administrador principal
+    // Función para verificar si el usuario es el administrador
     function isAdmin() {
-      return request.auth != null && request.auth.token.email == 'admin@jomstudio.com';
+      return request.auth != null && (
+        request.auth.token.email == 'admin@jomstudio.com' ||
+        (exists(/databases/$(database)/documents/usuarios/$(request.auth.uid)) && get(/databases/$(database)/documents/usuarios/$(request.auth.uid)).data.rol == 'admin')
+      );
     }
 
     // Reglas para la colección 'products'
@@ -15,19 +18,24 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     
-    // Reglas para la colección 'settings' (ej: tasas BCV)
+    // Reglas para la configuración (BCV Automático)
+    match /configuracion/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Reglas para la colección 'settings' (legacy)
     match /settings/{document=**} {
       allow read: if true;
       allow write: if isAdmin();
     }
 
-    // Reglas para la colección 'orders' (si la hubiera)
+    // Reglas para la colección 'orders'
     match /orders/{document=**} {
-      // Solo el admin puede leer todas las órdenes, o el usuario que la creó
       allow read: if isAdmin();
-      // Permitir que cualquiera (incluso sin login) cree una orden si viene del carrito, 
-      // pero solo el admin puede editarlas o borrarlas
-      allow create: if true;
+      // Permitir crear órdenes solo si el subtotal y la tasa bcv existen (como mínimo para evitar inyección de basura)
+      allow create: if request.resource.data.keys().hasAll(['customerInfo', 'items', 'subtotalBase', 'totalVes']) 
+                    && request.resource.data.items is list;
       allow update, delete: if isAdmin();
     }
 

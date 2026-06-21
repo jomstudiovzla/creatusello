@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { collection, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useStore } from '../store/useStore';
 import { resolveImageUrl, preloadImages } from '../utils/imageUtils';
 import heroBanner from '../assets/hero_banner.png';
 import heroCustomize from '../assets/hero_customize.png';
+import { DEFAULT_PRODUCTS } from './inventory_manager';
 
 export default function HomePage() {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -14,16 +15,36 @@ export default function HomePage() {
   const { addToCart, currency, exchangeRates, openCart } = useStore();
 
   useEffect(() => {
-    const unsub = onSnapshot(collection(db, 'products'), (snapshot) => {
+    const fetchProducts = async () => {
+      const q = query(collection(db, 'products'), where('status', '!=', 'Inactivo'));
+      const snapshot = await getDocs(q);
       const data = snapshot.docs.map(doc => {
         const item = { id: doc.id, ...doc.data() } as any;
         item.imgUrl = resolveImageUrl(item.imgUrl);
         return item;
       });
-      setProducts(data);
+
+      if (data.length > 0) {
+        setProducts(data);
+      } else {
+        const stored = localStorage.getItem('creatusello_products');
+        if (stored) {
+          const parsed = JSON.parse(stored);
+          const patched = parsed.map((p: any) => {
+             if (!p.imgUrl) {
+                const def = DEFAULT_PRODUCTS.find(d => d.sku === p.sku);
+                if (def) p.imgUrl = resolveImageUrl(def.imgUrl);
+             } else {
+                p.imgUrl = resolveImageUrl(p.imgUrl);
+             }
+             return p;
+          });
+          setProducts(patched);
+        }
+      }
       preloadImages(data.map(p => p.imgUrl));
-    });
-    return () => unsub();
+    };
+    fetchProducts();
   }, []);
 
   const formatPrice = (baseEurPrice: number) => {

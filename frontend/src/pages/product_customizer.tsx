@@ -232,8 +232,9 @@ export default function ProductCustomizer() {
               )}
               
               <div 
-                className="text-center font-bold text-3xl text-primary stamp-texture break-words max-w-sm transition-all" 
+                className="text-center font-bold text-3xl text-primary stamp-texture break-words max-w-sm transition-all stamp-text-truncate w-full px-4" 
                 style={{ fontFamily: fontFamily }}
+                title={text.trim() === "" ? "TU TEXTO AQUÍ" : text}
               >
                 {text.trim() === "" ? "TU TEXTO AQUÍ" : text}
               </div>
