@@ -174,10 +174,18 @@ export default function HomePage() {
             <div key={product.id} className="bg-white rounded-2xl shadow-lg border border-outline-variant overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition-all flex flex-col group">
               <div className="h-48 bg-surface-container flex justify-center items-center overflow-hidden p-4 relative">
                 {product.imgUrl ? (
-                  <img src={product.imgUrl} alt={product.type || product.name} className="max-w-full max-h-full object-contain drop-shadow-md group-hover:scale-110 transition-transform duration-500" />
-                ) : (
+                  <img 
+                    src={product.imgUrl} 
+                    alt={product.type || product.name} 
+                    className="max-w-full max-h-full object-contain drop-shadow-md group-hover:scale-110 transition-transform duration-500" 
+                    onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden'); }}
+                  />
+                ) : null}
+                {(!product.imgUrl) && (
                   <span className="material-symbols-outlined text-6xl text-outline">image</span>
                 )}
+                {/* Fallback element that becomes visible if img fails */}
+                <span className="material-symbols-outlined text-6xl text-outline hidden">image_not_supported</span>
                 {product.stock <= 10 && product.stock > 0 && (
                   <span className="absolute top-2 right-2 bg-vibrant-orange text-white text-[10px] font-bold px-2 py-1 rounded-full">¡Pocas unidades!</span>
                 )}

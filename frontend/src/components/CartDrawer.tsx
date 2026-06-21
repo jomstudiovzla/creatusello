@@ -25,7 +25,7 @@ const CartDrawer: React.FC = () => {
       const processedItems = await Promise.all(cart.map(async (item) => {
         return {
           id: item.id,
-          modelName: item.model.name,
+          modelName: item.model.name || item.model.type,
           quantity: item.quantity,
           price: item.model.price,
           unitPriceDisplay: getDisplayPrice(item.model.price),
@@ -127,7 +127,7 @@ const CartDrawer: React.FC = () => {
                   <div className="w-20 h-20 bg-surface-canvas rounded-lg flex items-center justify-center flex-shrink-0">
                     <img 
                       src={item.logoDataUrl || item.model.imgUrl} 
-                      alt={item.model.name} 
+                      alt={item.model.name || item.model.type} 
                       className="w-full h-full object-contain mix-blend-multiply p-2"
                     />
                   </div>
@@ -135,7 +135,7 @@ const CartDrawer: React.FC = () => {
                   {/* Details */}
                   <div className="flex-1 flex flex-col justify-between">
                     <div>
-                      <h3 className="font-bold text-sm text-on-surface line-clamp-2 pr-6">{item.model.name}</h3>
+                      <h3 className="font-bold text-sm text-on-surface line-clamp-2 pr-6">{item.model.name || item.model.type}</h3>
                       <p className="text-primary font-bold text-sm mt-1">{getDisplayPrice(item.model.price)}</p>
                     </div>
 

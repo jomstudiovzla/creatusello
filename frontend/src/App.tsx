@@ -37,13 +37,17 @@ function Navigation() {
     setShowCurrency(false);
   };
 
-  const currentVesRate = exchangeRates['VES'] || 0;
+  const vesPerEur = exchangeRates['VES'] || 0;
+  const vesPerUsd = exchangeRates['USD'] ? vesPerEur / exchangeRates['USD'] : 0;
 
   return (
     <>
     <div className="bg-primary text-white text-xs md:text-sm py-2 px-4 text-center font-bold flex flex-col md:flex-row items-center justify-center gap-2 md:gap-4 z-50 relative">
-      <span>⚠️ Todos los precios están sujetos a la tasa oficial del Banco Central de Venezuela (BCV).</span>
-      {currentVesRate > 0 && <span className="bg-white/20 px-3 py-1 rounded-full">Tasa BCV actual: Bs. {currentVesRate.toFixed(2)} / USD</span>}
+      <span>⚠️ Precios sujetos a la tasa oficial del Banco Central de Venezuela (BCV).</span>
+      <div className="flex gap-2">
+        {vesPerUsd > 0 && <span className="bg-white/20 px-3 py-1 rounded-full">Bs. {vesPerUsd.toFixed(2)} / USD</span>}
+        {vesPerEur > 0 && <span className="bg-white/20 px-3 py-1 rounded-full">Bs. {vesPerEur.toFixed(2)} / EUR</span>}
+      </div>
     </div>
     <header className="bg-surface-canvas shadow-[0px_4px_20px_rgba(0,0,0,0.04)] h-20 sticky top-0 z-50">
       <nav className="flex justify-between items-center w-full px-4 md:px-10 max-w-[1280px] mx-auto h-full">

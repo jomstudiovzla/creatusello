@@ -98,15 +98,26 @@ export default function InventoryManager() {
   const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Strict frontend validation
+    if (!file.type.startsWith('image/')) {
+      alert("Solo se permiten archivos de imagen (PNG, JPG, etc).");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) { // 5MB limit
+      alert("El archivo es demasiado grande. El límite es 5MB.");
+      return;
+    }
+
+    setIsUploadingImage(true);
     try {
-      setIsUploadingImage(true);
-      const storageRef = ref(storage, `products/${Date.now()}_${file.name}`);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
+      const imgRef = ref(storage, `products/img_${Date.now()}_${file.name}`);
+      await uploadBytes(imgRef, file);
+      const url = await getDownloadURL(imgRef);
       setFormData(prev => ({ ...prev, imgUrl: url }));
     } catch (err) {
       console.error(err);
-      alert("Error subiendo la imagen.");
+      alert('Error al subir la imagen. Verifica tu conexión.');
     } finally {
       setIsUploadingImage(false);
     }
