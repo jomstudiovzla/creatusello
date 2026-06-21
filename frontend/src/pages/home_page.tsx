@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import heroBanner from '../assets/hero_banner.png';
+import heroCustomize from '../assets/hero_customize.png';
 
 export default function HomePage() {
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -44,7 +46,7 @@ export default function HomePage() {
               </div>
               <div className="relative flex justify-center items-center group cursor-pointer">
                 <div className="absolute w-[500px] h-[500px] bg-vibrant-teal/10 rounded-full blur-3xl group-hover:bg-vibrant-teal/20 transition-all duration-700"></div>
-                <img alt="Display professional stamps" className="relative z-10 w-[600px] lg:w-[700px] object-cover rounded-xl animate-float group-hover:scale-110 group-hover:rotate-2 transition-transform duration-700 drop-shadow-2xl shadow-xl" src={`${import.meta.env.BASE_URL}hero_banner.png`}/>
+                <img alt="Display professional stamps" className="relative z-10 w-[600px] lg:w-[700px] object-cover rounded-xl animate-float group-hover:scale-110 group-hover:rotate-2 transition-transform duration-700 drop-shadow-2xl shadow-xl" src={heroBanner}/>
               </div>
             </div>
           </div>
@@ -57,7 +59,7 @@ export default function HomePage() {
               </div>
               <div className="relative group cursor-pointer mt-8 md:mt-0">
                 <div className="absolute inset-0 bg-vibrant-orange/10 rounded-xl -rotate-3 group-hover:-rotate-6 transition-transform duration-500"></div>
-                <img alt="Online customization platform interface" className="relative z-10 w-full lg:w-[650px] h-[450px] lg:h-[550px] object-cover rounded-xl shadow-2xl border-8 border-white group-hover:scale-105 group-hover:shadow-vibrant-orange/30 transition-all duration-700" src={`${import.meta.env.BASE_URL}hero_customize.png`}/>
+                <img alt="Online customization platform interface" className="relative z-10 w-full lg:w-[650px] h-[450px] lg:h-[550px] object-cover rounded-xl shadow-2xl border-8 border-white group-hover:scale-105 group-hover:shadow-vibrant-orange/30 transition-all duration-700" src={heroCustomize}/>
               </div>
             </div>
           </div>
