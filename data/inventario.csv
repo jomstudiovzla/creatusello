@@ -1,0 +1,10 @@
+SKU,Nombre,Categoria,Dimensiones,Precio_EUR,Stock,Estado,Descripcion
+AUTO-01,Sello Automático Profesional,Sellos,38x14mm,19.50,100,Óptimo,Sello automático autoentintable ideal para uso continuo y profesional.
+FECH-01,Sello Fechador Administrativo,Sellos,45x45mm,28.00,50,Óptimo,Sello con bandas de goma para fechas y texto personalizado superior.
+TRAD-01,Sello Tradicional de Madera,Sellos,60x40mm,12.00,10,Bajo Stock,Sello clásico con montura de madera barnizada. Requiere almohadilla externa.
+PORT-01,Sello Portable de Bolsillo,Sellos,30x30mm,22.00,75,Moderado,Sello compacto y ligero para llevar a cualquier parte.
+REP-ALM-01,Almohadilla de Tinta Negra,Repuestos,N/A,4.50,200,Óptimo,Almohadilla de recambio con tinta negra para sellos automáticos estándar.
+REP-ALM-02,Almohadilla Bicolor (Azul/Rojo),Repuestos,N/A,5.50,150,Óptimo,Almohadilla de doble color ideal para sellos fechadores.
+REP-GOM-01,Goma Personalizada Grabada,Repuestos,Variable,9.00,500,Óptimo,Plantilla de goma cortada a láser con texto o logo personalizado para reemplazo.
+REP-TIN-01,Frasco de Tinta Líquida Negra 30ml,Repuestos,30ml,6.00,80,Moderado,Tinta especial para recargar almohadillas de sellos manuales y automáticos.
+REP-BAS-01,Base/Montura de Madera Sola,Repuestos,60x40mm,5.00,30,Moderado,Solo la montura de madera con mango ergonómico sin goma.

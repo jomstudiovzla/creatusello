@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { db, storage } from '../lib/firebase';
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import Papa from 'papaparse';
 
 interface Product {
   id: string;
@@ -27,6 +28,7 @@ export default function InventoryManager() {
   const [typographies, setTypographies] = useState<Typography[]>([]);
   const [isUploadingFont, setIsUploadingFont] = useState(false);
   const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
   
   // Modals
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -142,6 +144,53 @@ export default function InventoryManager() {
       stock: product.stock, status: product.status, sku: product.sku, imgUrl: product.imgUrl
     });
     setIsProductModalOpen(true);
+  };
+
+  const handleImportCSV = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsImporting(true);
+    
+    Papa.parse(file, {
+      header: true,
+      skipEmptyLines: true,
+      complete: async (results) => {
+        try {
+          const rows = results.data as any[];
+          let importedCount = 0;
+          for (const row of rows) {
+            if (!row.SKU || !row.Nombre) continue;
+            const newProduct = {
+              sku: row.SKU,
+              type: row.Nombre,
+              category: row.Categoria || '',
+              dim: row.Dimensiones || '',
+              price: parseFloat(row.Precio_EUR) || 0,
+              stock: parseInt(row.Stock) || 0,
+              status: row.Estado || 'Óptimo',
+              imgUrl: row.Imagen || '', // if they put URL in CSV
+              desc: row.Descripcion || ''
+            };
+            await addDoc(collection(db, 'products'), newProduct);
+            importedCount++;
+          }
+          alert(`¡Importación exitosa! Se han añadido ${importedCount} productos.`);
+        } catch (err) {
+          console.error("Error importando CSV:", err);
+          alert("Ocurrió un error al importar el CSV.");
+        } finally {
+          setIsImporting(false);
+        }
+      },
+      error: (err) => {
+        console.error(err);
+        alert("Error al leer el archivo CSV.");
+        setIsImporting(false);
+      }
+    });
+    
+    // reset input
+    e.target.value = '';
   };
 
   const handleMigrateCatalog = async () => {
@@ -273,6 +322,17 @@ export default function InventoryManager() {
               <p className="text-text-secondary text-base">Administra el stock, dimensiones y recursos tipográficos de tus productos.</p>
             </div>
             <div className="flex gap-3">
+              <label className={`flex items-center gap-2 px-4 py-3 rounded-lg font-bold text-sm border border-outline-variant transition-all cursor-pointer ${isImporting ? 'bg-surface-container-highest text-text-secondary cursor-not-allowed' : 'bg-surface-container-low text-primary hover:bg-surface-container-highest'}`}>
+                <span className="material-symbols-outlined text-[18px]">{isImporting ? 'hourglass_empty' : 'upload_file'}</span> 
+                {isImporting ? 'Importando...' : 'Importar CSV'}
+                <input 
+                  type="file" 
+                  accept=".csv" 
+                  className="hidden" 
+                  onChange={handleImportCSV} 
+                  disabled={isImporting} 
+                />
+              </label>
               <button onClick={handleMigrateCatalog} className="flex items-center gap-2 bg-surface-container-low text-primary px-4 py-3 rounded-lg font-bold text-sm border border-outline-variant hover:bg-surface-container-highest transition-all">
                 <span className="material-symbols-outlined text-[18px]">restore</span> Restaurar Catálogo
               </button>
