@@ -57,15 +57,20 @@ export default function ShoppingCart() {
           } catch(e) { console.error('Error reading logo file', e); }
         }
 
-        return {
-          model: item.model,
-          text: item.text,
-          fontFamily: item.fontFamily,
-          quantity: item.quantity,
-          fontFileUrl,
-          logoFileUrl,
+        const safeItem = {
+          model: {
+            type: item.model.type,
+            dim: item.model.dim,
+            price: item.model.price
+          },
+          text: item.text || "",
+          fontFamily: item.fontFamily || "",
+          quantity: item.quantity || 1,
+          fontFileUrl: fontFileUrl || null,
+          logoFileUrl: logoFileUrl || null,
           price: item.model.price
         };
+        return safeItem;
       }));
 
       const orderRef = await addDoc(collection(db, 'orders'), {
