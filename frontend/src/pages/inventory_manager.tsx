@@ -150,17 +150,21 @@ export default function InventoryManager() {
   const processImportedData = async (rows: any[]) => {
     let importedCount = 0;
     for (const row of rows) {
-      if (!row.SKU || !row.Nombre) continue;
+      const sku = row.SKU || row.sku;
+      const nombre = row['Nombre del Producto'] || row.Nombre || row.name;
+      
+      if (!sku || !nombre) continue;
+      
       const newProduct = {
-        sku: row.SKU,
-        type: row.Nombre,
-        category: row.Categoria || '',
-        dim: row.Dimensiones || '',
-        price: parseFloat(row.Precio_EUR) || 0,
-        stock: parseInt(row.Stock) || 0,
+        sku: sku,
+        type: nombre,
+        category: row.Categoría || row.Categoria || row.category || '',
+        dim: row.Dimensiones || row.dim || '',
+        price: parseFloat(row['Precio (€)'] || row.Precio_EUR || row.price) || 0,
+        stock: parseInt(row.Stock || row.stock) || 0,
         status: row.Estado || 'Óptimo',
-        imgUrl: row.Imagen || '', // if they put URL in CSV
-        desc: row.Descripcion || ''
+        imgUrl: row.Imagen || row.imgUrl || '', 
+        desc: row.Descripción || row.Descripcion || row.desc || ''
       };
       await addDoc(collection(db, 'products'), newProduct);
       importedCount++;
