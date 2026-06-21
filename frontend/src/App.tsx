@@ -15,6 +15,9 @@ import OrdersPanel from './pages/orders_panel';
 import AdminLogin from './pages/admin/admin_login';
 import AdminDashboard from './pages/admin/admin_dashboard';
 import ProfilePage from './pages/profile_page';
+import TermsPage from './pages/terms_page';
+import PrivacyPage from './pages/privacy_page';
+import ReturnsPage from './pages/returns_page';
 
 function Navigation() {
   const { user, currency, setCurrency, setUser, cart, exchangeRates } = useStore();
@@ -97,16 +100,42 @@ function Navigation() {
 function Footer() {
   return (
     <footer className="bg-[#ffffff] border-t border-outline-variant py-12 px-10 w-full mt-auto">
-      <div className="max-w-[1280px] mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
-        <div className="flex flex-col gap-2">
+      <div className="max-w-[1280px] mx-auto flex flex-col md:flex-row justify-between items-start gap-8">
+        <div className="flex flex-col gap-4 max-w-sm">
           <span className="font-title-md text-primary font-bold">Crea tu Sello</span>
-          <p className="text-on-surface-variant font-body-md text-sm">© 2024 Crea tu Sello. All rights reserved.</p>
+          <p className="text-on-surface-variant font-body-md text-sm leading-relaxed">
+            Especialistas en sellos automáticos. Calidad industrial, precisión y tiempos de entrega insuperables.
+          </p>
+          <div className="bg-error/10 border border-error/20 p-4 rounded-xl mt-2">
+            <p className="text-error text-xs font-bold flex items-start gap-2">
+              <span className="material-symbols-outlined text-[16px] shrink-0">gpp_maybe</span>
+              Aviso de Seguridad Antifraude:
+            </p>
+            <p className="text-on-surface-variant text-[11px] mt-1 leading-tight">
+              Solo te contactaremos desde nuestro WhatsApp oficial. <strong>No almacenamos, procesamos ni solicitamos datos de tus Tarjetas de Crédito.</strong> Todo pago es mediante pasarelas oficiales.
+            </p>
+          </div>
+          <p className="text-on-surface-variant font-body-md text-sm mt-4">© 2024 Crea tu Sello. All rights reserved.</p>
         </div>
-        <div className="flex gap-8 text-on-surface-variant font-body-md">
-          <a className="hover:text-secondary transition-colors" href="#">Terms of Service</a>
-          <a className="hover:text-secondary transition-colors" href="#">Privacy Policy</a>
+        
+        <div className="flex flex-col gap-4">
+          <h4 className="font-bold text-on-surface">Legal</h4>
+          <div className="flex flex-col gap-3 text-on-surface-variant font-body-md text-sm">
+            <Link className="hover:text-secondary transition-colors flex items-center gap-2" to="/terms">
+              <span className="material-symbols-outlined text-[16px]">gavel</span> Términos y Condiciones
+            </Link>
+            <Link className="hover:text-secondary transition-colors flex items-center gap-2" to="/privacy">
+              <span className="material-symbols-outlined text-[16px]">privacy_tip</span> Políticas de Privacidad
+            </Link>
+            <Link className="hover:text-secondary transition-colors flex items-center gap-2" to="/returns">
+              <span className="material-symbols-outlined text-[16px]">published_with_changes</span> Políticas de Devolución
+            </Link>
+          </div>
         </div>
-        <div className="flex gap-4">
+        
+        <div className="flex flex-col gap-4">
+          <h4 className="font-bold text-on-surface">Contacto Directo</h4>
+          <div className="flex gap-4">
           <a href="https://wa.me/584142461548" target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-[#25D366]/10 flex items-center justify-center cursor-pointer hover:bg-[#25D366]/20 transition-colors" title="WhatsApp">
             <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" className="w-5 h-5" />
           </a>
@@ -116,6 +145,7 @@ function Footer() {
           <a href="mailto:contacto@creatusello.com" className="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center cursor-pointer hover:bg-[#b6c4ff] transition-colors" title="Correo">
             <span className="material-symbols-outlined text-primary">mail</span>
           </a>
+        </div>
         </div>
       </div>
     </footer>
@@ -197,6 +227,9 @@ export default function App() {
           <Route path="/admin/orders" element={<OrdersPanel />} />
           <Route path="/mi-negocio-admin" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/returns" element={<ReturnsPage />} />
         </Routes>
         <Footer />
       </div>
