@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useStore } from '../store/useStore';
 import { useNavigate } from 'react-router-dom';
-import { db } from '../lib/firebase';
+import { db, storage } from '../lib/firebase';
 import { collection, addDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 export default function ShoppingCart() {
   const { cart, user, removeFromCart, updateQuantity, clearCart, currency, exchangeRates } = useStore();
@@ -21,15 +22,6 @@ export default function ShoppingCart() {
   const taxes = subtotal * 0.21;
   const total = subtotal + taxes;
 
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = error => reject(error);
-    });
-  };
-
   const handleCheckout = async () => {
     if (!user) {
       navigate('/login');
@@ -40,21 +32,24 @@ export default function ShoppingCart() {
 
     setIsProcessing(true);
     try {
-      // Usamos Base64 directamente en Firestore para evitar bloqueos de CORS en Firebase Storage
       const processedItems = await Promise.all(cart.map(async (item) => {
         let fontFileUrl = null;
-        let logoFileUrl = item.logoDataUrl || null;
+        let logoFileUrl = null;
 
         if (item.fontFile) {
           try {
-            fontFileUrl = await fileToBase64(item.fontFile);
-          } catch(e) { console.error('Error reading font file', e); }
+            const fontRef = ref(storage, `orders/${user.uid}/${Date.now()}_${item.fontFile.name}`);
+            await uploadBytes(fontRef, item.fontFile);
+            fontFileUrl = await getDownloadURL(fontRef);
+          } catch(e) { console.error('Error uploading font file', e); }
         }
 
-        if (item.logoFile && !logoFileUrl) {
+        if (item.logoFile) {
           try {
-            logoFileUrl = await fileToBase64(item.logoFile);
-          } catch(e) { console.error('Error reading logo file', e); }
+            const logoRef = ref(storage, `orders/${user.uid}/${Date.now()}_${item.logoFile.name}`);
+            await uploadBytes(logoRef, item.logoFile);
+            logoFileUrl = await getDownloadURL(logoRef);
+          } catch(e) { console.error('Error uploading logo file', e); }
         }
 
         const safeItem = {
