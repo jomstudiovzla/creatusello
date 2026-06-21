@@ -6,6 +6,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import ExcelJS from 'exceljs';
+import { resolveImageUrl } from '../utils/imageUtils';
 
 interface Product {
   id: string;
@@ -43,7 +44,12 @@ export default function InventoryManager() {
 
   useEffect(() => {
     const unsubProducts = onSnapshot(collection(db, 'products'), (snapshot) => {
-      setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product)));
+      const data = snapshot.docs.map(doc => {
+        const item = { id: doc.id, ...doc.data() } as Product;
+        item.imgUrl = resolveImageUrl(item.imgUrl);
+        return item;
+      });
+      setProducts(data);
     });
     const unsubTypographies = onSnapshot(collection(db, 'typographies'), (snapshot) => {
       setTypographies(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Typography)));

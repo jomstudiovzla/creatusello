@@ -22,6 +22,7 @@ export type Currency = 'EUR' | 'USD' | 'VES';
 interface StoreState {
   user: User | null;
   cart: CartItem[];
+  isCartOpen: boolean;
   isAdminLoggedIn: boolean;
   currency: Currency;
   exchangeRates: { EUR: number, USD: number, VES: number };
@@ -35,11 +36,14 @@ interface StoreState {
   removeFromCart: (itemId: string) => void;
   updateQuantity: (itemId: string, quantity: number) => void;
   clearCart: () => void;
+  openCart: () => void;
+  closeCart: () => void;
 }
 
 export const useStore = create<StoreState>((set) => ({
   user: null,
   cart: [],
+  isCartOpen: false,
   isAdminLoggedIn: sessionStorage.getItem('isAdminLoggedIn') === 'true',
   currency: 'EUR',
   exchangeRates: { EUR: 1, USD: 1.08, VES: 39.50 }, // Valores iniciales de fallback
@@ -73,4 +77,6 @@ export const useStore = create<StoreState>((set) => ({
   })),
   
   clearCart: () => set({ cart: [] }),
+  openCart: () => set({ isCartOpen: true }),
+  closeCart: () => set({ isCartOpen: false }),
 }));

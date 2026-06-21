@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect, type ChangeEvent } from 'react';
 import { useStore } from '../store/useStore';
-import { useNavigate } from 'react-router-dom';
 import { db } from '../lib/firebase';
 import { collection, onSnapshot } from 'firebase/firestore';
+import { resolveImageUrl, preloadImages } from '../utils/imageUtils';
 
 export default function ProductCustomizer() {
   const [text, setText] = useState("");
@@ -18,13 +18,17 @@ export default function ProductCustomizer() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
-  const { addToCart, currency, exchangeRates } = useStore();
-  const navigate = useNavigate();
+  const { addToCart, currency, exchangeRates, openCart } = useStore();
 
   useEffect(() => {
     const unsubProducts = onSnapshot(collection(db, 'products'), (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const data = snapshot.docs.map(doc => {
+        const item = { id: doc.id, ...doc.data() } as any;
+        item.imgUrl = resolveImageUrl(item.imgUrl);
+        return item;
+      });
       setProducts(data);
+      preloadImages(data.map(p => p.imgUrl));
       if (data.length > 0 && !model) {
         const defaultStamps = data.filter((m: any) => !m.category || m.category.toLowerCase() === 'sellos');
         if (defaultStamps.length > 0) {
@@ -278,8 +282,7 @@ export default function ProductCustomizer() {
                   logoDataUrl: logoData,
                   quantity: 1
                 });
-                alert('¡Añadido al carrito con éxito!');
-                navigate('/cart');
+                openCart();
               }}
               className="w-full bg-vibrant-blue text-white py-4 rounded-xl font-bold text-lg hover:bg-primary active:scale-95 transition-all flex items-center justify-center gap-2 shadow-lg shadow-vibrant-blue/30"
             >

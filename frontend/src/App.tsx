@@ -9,7 +9,6 @@ import HomePage from './pages/home_page';
 import AuthLogin from './pages/auth_login';
 import ContactPage from './pages/contact_page';
 import ProductCustomizer from './pages/product_customizer';
-import ShoppingCart from './pages/shopping_cart';
 import InventoryManager from './pages/inventory_manager';
 import OrdersPanel from './pages/orders_panel';
 import AdminLogin from './pages/admin/admin_login';
@@ -18,9 +17,10 @@ import ProfilePage from './pages/profile_page';
 import TermsPage from './pages/terms_page';
 import PrivacyPage from './pages/privacy_page';
 import ReturnsPage from './pages/returns_page';
+import CartDrawer from './components/CartDrawer';
 
 function Navigation() {
-  const { user, currency, setCurrency, setUser, cart, exchangeRates } = useStore();
+  const { user, currency, setCurrency, setUser, cart, exchangeRates, openCart } = useStore();
   const [showProfile, setShowProfile] = useState(false);
   const [showCurrency, setShowCurrency] = useState(false);
   const navigate = useNavigate();
@@ -69,10 +69,10 @@ function Navigation() {
             )}
           </div>
 
-          <Link to="/cart" className="relative flex items-center">
+          <button onClick={openCart} className="relative flex items-center bg-transparent border-none outline-none">
             <span className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">shopping_cart</span>
             {cart.length > 0 && <span className="absolute -top-2 -right-2 bg-error text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">{cart.length}</span>}
-          </Link>
+          </button>
           
           {user ? (
             <div className="relative">
@@ -167,31 +167,28 @@ export default function App() {
 
     const fetchRates = async () => {
       try {
-        // 1. Intentar obtener tasas oficiales desde Firebase (inyectadas por el script Python)
         const rateDoc = await getDoc(doc(db, 'settings', 'rates'));
         if (rateDoc.exists()) {
           const data = rateDoc.data();
           if (data.VES) {
             setExchangeRates({ 
               EUR: 1, 
-              USD: data.EUR / data.VES, // O proporcion si viene
+              USD: data.EUR / data.VES, 
               VES: data.VES 
             });
-            return; // Terminar si se obtuvo de la base de datos
+            return;
           }
         }
       } catch (e) {
         console.log("No se pudo obtener la tasa desde Firebase, usando respaldo DolarAPI", e);
       }
 
-      // 2. Respaldo (Fallback) a DolarAPI si Firebase falla o no tiene datos
       try {
         const usdRes = await fetch('https://ve.dolarapi.com/v1/dolares/oficial');
         const usdData = await usdRes.json();
         const eurRes = await fetch('https://ve.dolarapi.com/v1/euros');
         const eurData = await eurRes.json();
         
-        // Manejar caso donde DolarAPI devuelve un arreglo de objetos para euros
         const eurRate = Array.isArray(eurData) ? eurData[0]?.promedio : eurData?.promedio;
         const usdRate = Array.isArray(usdData) ? usdData[0]?.promedio : usdData?.promedio;
         
@@ -216,10 +213,10 @@ export default function App() {
     <BrowserRouter basename="/creatusello">
       <div className="bg-background text-on-surface font-body-md min-h-screen flex flex-col">
         <Navigation />
+        <CartDrawer />
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/customizer" element={<ProductCustomizer />} />
-          <Route path="/cart" element={<ShoppingCart />} />
           <Route path="/login" element={<AuthLogin />} />
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/profile" element={<ProfilePage />} />

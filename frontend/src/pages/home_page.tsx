@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { useStore } from '../store/useStore';
+import { resolveImageUrl, preloadImages } from '../utils/imageUtils';
 import heroBanner from '../assets/hero_banner.png';
 import heroCustomize from '../assets/hero_customize.png';
 
@@ -10,11 +11,17 @@ export default function HomePage() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [products, setProducts] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
-  const { addToCart, currency, exchangeRates } = useStore();
+  const { addToCart, currency, exchangeRates, openCart } = useStore();
 
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'products'), (snapshot) => {
-      setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      const data = snapshot.docs.map(doc => {
+        const item = { id: doc.id, ...doc.data() } as any;
+        item.imgUrl = resolveImageUrl(item.imgUrl);
+        return item;
+      });
+      setProducts(data);
+      preloadImages(data.map(p => p.imgUrl));
     });
     return () => unsub();
   }, []);
@@ -195,7 +202,10 @@ export default function HomePage() {
                     </Link>
                   ) : (
                     <button 
-                      onClick={() => addToCart({...product, qty: 1})}
+                      onClick={() => {
+                        addToCart({ id: crypto.randomUUID(), model: product, quantity: 1, text: '', fontFamily: '' });
+                        openCart();
+                      }}
                       disabled={product.stock === 0}
                       className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${product.stock > 0 ? 'bg-primary/10 text-primary hover:bg-primary hover:text-white' : 'bg-surface-container text-outline cursor-not-allowed'}`}
                     >
