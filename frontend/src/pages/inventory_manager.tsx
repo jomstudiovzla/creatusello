@@ -114,18 +114,43 @@ export default function InventoryManager() {
 
   const handleSaveProduct = async (e: FormEvent) => {
     e.preventDefault();
+    setIsImporting(true);
     try {
+      let finalImgUrl = formData.imgUrl;
+
+      // Auto-download external URLs and upload to Firebase
+      if (finalImgUrl && finalImgUrl.startsWith('http') && !finalImgUrl.includes('firebasestorage')) {
+        try {
+          const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(finalImgUrl)}`;
+          const response = await fetch(proxyUrl);
+          if (response.ok) {
+            const blob = await response.blob();
+            const ext = blob.type.split('/')[1] || 'png';
+            const imgRef = ref(storage, `products/url_import_${Date.now()}.${ext}`);
+            await uploadBytes(imgRef, blob);
+            finalImgUrl = await getDownloadURL(imgRef);
+          }
+        } catch (downloadErr) {
+          console.warn("No se pudo descargar la imagen externa, se mantendrá la URL original.", downloadErr);
+        }
+      }
+
+      const productToSave = { ...formData, imgUrl: finalImgUrl };
+      
       if (editingProduct) {
-        await updateDoc(doc(db, 'products', editingProduct.id), formData);
+        await updateDoc(doc(db, 'products', editingProduct.id), productToSave);
       } else {
-        await addDoc(collection(db, 'products'), formData);
+        await addDoc(collection(db, 'products'), productToSave);
       }
       setIsProductModalOpen(false);
       setEditingProduct(null);
       setFormData({ type: '', dim: '', price: 0, stock: 0, status: 'Óptimo', sku: '', imgUrl: '' });
+      alert(editingProduct ? 'Producto actualizado con éxito' : 'Producto agregado con éxito');
     } catch (err) {
-      console.error(err);
-      alert("Error al guardar el producto.");
+      console.error('Error al guardar el producto:', err);
+      alert('Error al guardar el producto');
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -154,7 +179,7 @@ export default function InventoryManager() {
     setIsProductModalOpen(true);
   };
 
-  const processImportedData = async (rows: any[]) => {
+  const processImportedData = async (jsonData: any[]) => {
     // Primero borrar el catálogo actual
     const snapshot = await getDocs(collection(db, 'products'));
     const batch = writeBatch(db);
@@ -164,12 +189,31 @@ export default function InventoryManager() {
     await batch.commit();
 
     let importedCount = 0;
-    for (const row of rows) {
+    for (const row of jsonData) {
       const sku = row.SKU || row.sku;
-      const nombre = row['Nombre del Producto'] || row.Nombre || row.name;
+      const nombre = row.Nombre || row.name || row.type || row.Producto;
       
       if (!sku || !nombre) continue;
       
+      let rawUrl = row.Imagen || row.imgUrl || '';
+      
+      // Auto-download external URLs and upload to Firebase during CSV/Excel import
+      if (rawUrl && rawUrl.startsWith('http') && !rawUrl.includes('firebasestorage')) {
+        try {
+          const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(rawUrl)}`;
+          const response = await fetch(proxyUrl);
+          if (response.ok) {
+            const blob = await response.blob();
+            const ext = blob.type.split('/')[1] || 'png';
+            const imgRef = ref(storage, `products/csv_import_${Date.now()}_${Math.random().toString(36).substring(7)}.${ext}`);
+            await uploadBytes(imgRef, blob);
+            rawUrl = await getDownloadURL(imgRef);
+          }
+        } catch(err) {
+          console.warn("Falló la descarga de imagen para la fila, se conservará la URL original", row, err);
+        }
+      }
+
       const newProduct = {
         sku: sku,
         type: nombre,
@@ -178,7 +222,7 @@ export default function InventoryManager() {
         price: parseFloat(row['Precio (€)'] || row.Precio_EUR || row.price) || 0,
         stock: parseInt(row.Stock || row.stock) || 0,
         status: row.Estado || 'Óptimo',
-        imgUrl: row.Imagen || row.imgUrl || '', 
+        imgUrl: rawUrl, 
         desc: row.Descripción || row.Descripcion || row.desc || ''
       };
       await addDoc(collection(db, 'products'), newProduct);
