@@ -89,11 +89,21 @@ export default function ProductCustomizer() {
     }
   };
 
-  if (isLoading || !model) {
+  if (isLoading) {
     return (
       <div className="flex-grow flex flex-col items-center justify-center bg-surface-canvas min-h-[calc(100vh-80px)]">
         <span className="material-symbols-outlined text-4xl text-primary animate-spin">refresh</span>
         <p className="mt-4 font-bold text-primary">Cargando catálogo dinámico...</p>
+      </div>
+    );
+  }
+
+  if (!model && products.length === 0) {
+    return (
+      <div className="flex-grow flex flex-col items-center justify-center bg-surface-canvas min-h-[calc(100vh-80px)]">
+        <span className="material-symbols-outlined text-6xl text-outline mb-4">inventory_2</span>
+        <h2 className="text-2xl font-bold text-on-surface">Catálogo Vacío</h2>
+        <p className="mt-2 text-on-surface-variant">El administrador aún no ha publicado ningún producto.</p>
       </div>
     );
   }

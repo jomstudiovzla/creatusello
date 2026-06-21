@@ -144,6 +144,25 @@ export default function InventoryManager() {
     setIsProductModalOpen(true);
   };
 
+  const handleMigrateCatalog = async () => {
+    if (!confirm("¿Deseas restaurar el catálogo base? Esto añadirá los 4 productos originales.")) return;
+    try {
+      const MODELS = [
+        { type: 'Automático', dim: '38x14mm', price: 19.50, imgUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuDGO80G8SQt65AR4wUkYwUltfDs8LoaK32bXFlaJfKyT_FybVmrmvToGmAOZequsS-1f11vX_hKvryQ22HERLz5fn85KAq6YIeRKPj0b2jKIYjManWEE0GVi7Stz0wvlzudRraK1Z8ckuZt2--OmY3XuP5AQLk5mbwV42vk4NukD7Lo0XCbllu24IAHjaOG708LCn0K09vnaHo0oHg5p29HGk5Jyew0Fddc45hsEch8mJ3AqiaOWkWs46GQ1RSLZFrvxrrfImp9jMg", stock: 100, status: 'Óptimo', sku: 'AUTO-01' },
+        { type: 'Fechador', dim: '45x45mm', price: 28.00, imgUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuD9uzK6LWhBjUP--y4ZuRHJh8T7jJvVMzHrgIkZllVmBHZjhJfD2fzEa5arRBtvj1kzNdSnDJdm67pEDxRJQYk0maCpjODRSVoy6mjwrECSo2ki3E_LPMZJBaMcg8RkNVKMh49N9k3Ka4IbPLaRpygvHNLoFB7p6QO9eUHdWmPkGXMjKuNakmBw1lafVn61CnbA675EIjosRncT6CkKs5cQf74SUmFTFb167DF-fR5GyHLfTzCT0dCfr6zCKsxlYbcVywPV-Uas9rI", stock: 50, status: 'Óptimo', sku: 'FECH-01' },
+        { type: 'Tradicional', dim: '60x40mm', price: 12.00, imgUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuC_B8aoEYQ_lMmCdugdqu_trQMnSWjcCfcnHLHGe1nkRvIk0R-gyzi0PQXawGKDBKywNl2mibxMcSzd8KLlcPFOJ5KapWEgI7tMvp6Zcm_XYrmhpvHCZinpIiRQ8hgpCgMiHHeYntEczPvBzP7Rpozff3eWMgfgD6h-h5hMxoMQmdMk2TnYk-Na6bZYifA-de_DQ8aFxV_gkIN_Ynqv24HleJM_t5_6EeCMChvwwFNyc7JpSZSMBZYY1mUoLriVXIx2ZZ5uA1QwfD8", stock: 10, status: 'Bajo Stock', sku: 'TRAD-01' },
+        { type: 'Portable', dim: '30x30mm', price: 22.00, imgUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuDGO80G8SQt65AR4wUkYwUltfDs8LoaK32bXFlaJfKyT_FybVmrmvToGmAOZequsS-1f11vX_hKvryQ22HERLz5fn85KAq6YIeRKPj0b2jKIYjManWEE0GVi7Stz0wvlzudRraK1Z8ckuZt2--OmY3XuP5AQLk5mbwV42vk4NukD7Lo0XCbllu24IAHjaOG708LCn0K09vnaHo0oHg5p29HGk5Jyew0Fddc45hsEch8mJ3AqiaOWkWs46GQ1RSLZFrvxrrfImp9jMg", stock: 75, status: 'Moderado', sku: 'PORT-01' }
+      ];
+      for (const m of MODELS) {
+        await addDoc(collection(db, 'products'), m);
+      }
+      alert("Catálogo restaurado.");
+    } catch (err) {
+      console.error(err);
+      alert("Error restaurando catálogo.");
+    }
+  };
+
   return (
     <main className="pt-24 min-h-screen bg-background">
       <style>{`
@@ -253,9 +272,14 @@ export default function InventoryManager() {
               <h1 className="font-headline-lg text-3xl font-bold text-text-primary">Gestión de Inventario</h1>
               <p className="text-text-secondary text-base">Administra el stock, dimensiones y recursos tipográficos de tus productos.</p>
             </div>
-            <button onClick={openNewProductModal} className="flex items-center gap-2 bg-vibrant-orange text-white px-6 py-3 rounded-lg font-bold text-lg hover:scale-105 active:scale-95 transition-all shadow-lg shadow-vibrant-orange/30">
-              <span className="material-symbols-outlined">add</span> Nuevo Producto
-            </button>
+            <div className="flex gap-3">
+              <button onClick={handleMigrateCatalog} className="flex items-center gap-2 bg-surface-container-low text-primary px-4 py-3 rounded-lg font-bold text-sm border border-outline-variant hover:bg-surface-container-highest transition-all">
+                <span className="material-symbols-outlined text-[18px]">restore</span> Restaurar Catálogo
+              </button>
+              <button onClick={openNewProductModal} className="flex items-center gap-2 bg-vibrant-orange text-white px-6 py-3 rounded-lg font-bold text-lg hover:scale-105 active:scale-95 transition-all shadow-lg shadow-vibrant-orange/30">
+                <span className="material-symbols-outlined">add</span> Nuevo Producto
+              </button>
+            </div>
           </div>
 
           <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
