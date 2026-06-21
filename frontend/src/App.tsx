@@ -182,7 +182,7 @@ export default function App() {
   }, []);
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/creatusello">
       <div className="bg-background text-on-surface font-body-md min-h-screen flex flex-col">
         <Navigation />
         <Routes>
