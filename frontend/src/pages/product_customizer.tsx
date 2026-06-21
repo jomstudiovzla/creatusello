@@ -208,7 +208,7 @@ export default function ProductCustomizer() {
           {/* Physical Stamp Image */}
           <div className="relative group cursor-zoom-in transition-transform duration-500 hover:scale-105">
             <img 
-              className="w-[350px] lg:w-[450px] h-auto drop-shadow-2xl transition-opacity duration-300 rounded-lg object-cover" 
+              className="w-[200px] lg:w-[250px] max-h-[300px] drop-shadow-2xl transition-opacity duration-300 rounded-lg object-contain" 
               alt={`Sello ${model.type}`}
               src={model.imgUrl}
             />
