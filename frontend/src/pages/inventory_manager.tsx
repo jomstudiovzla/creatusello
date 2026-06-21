@@ -4,6 +4,7 @@ import { db, storage } from '../lib/firebase';
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import Papa from 'papaparse';
+import * as XLSX from 'xlsx';
 
 interface Product {
   id: string;
@@ -146,51 +147,71 @@ export default function InventoryManager() {
     setIsProductModalOpen(true);
   };
 
-  const handleImportCSV = async (e: ChangeEvent<HTMLInputElement>) => {
+  const processImportedData = async (rows: any[]) => {
+    let importedCount = 0;
+    for (const row of rows) {
+      if (!row.SKU || !row.Nombre) continue;
+      const newProduct = {
+        sku: row.SKU,
+        type: row.Nombre,
+        category: row.Categoria || '',
+        dim: row.Dimensiones || '',
+        price: parseFloat(row.Precio_EUR) || 0,
+        stock: parseInt(row.Stock) || 0,
+        status: row.Estado || 'Óptimo',
+        imgUrl: row.Imagen || '', // if they put URL in CSV
+        desc: row.Descripcion || ''
+      };
+      await addDoc(collection(db, 'products'), newProduct);
+      importedCount++;
+    }
+    return importedCount;
+  };
+
+  const handleImportFile = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setIsImporting(true);
     
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: async (results) => {
-        try {
-          const rows = results.data as any[];
-          let importedCount = 0;
-          for (const row of rows) {
-            if (!row.SKU || !row.Nombre) continue;
-            const newProduct = {
-              sku: row.SKU,
-              type: row.Nombre,
-              category: row.Categoria || '',
-              dim: row.Dimensiones || '',
-              price: parseFloat(row.Precio_EUR) || 0,
-              stock: parseInt(row.Stock) || 0,
-              status: row.Estado || 'Óptimo',
-              imgUrl: row.Imagen || '', // if they put URL in CSV
-              desc: row.Descripcion || ''
-            };
-            await addDoc(collection(db, 'products'), newProduct);
-            importedCount++;
+    try {
+      const isExcel = file.name.endsWith('.xlsx') || file.name.endsWith('.xls');
+      
+      if (isExcel) {
+        const buffer = await file.arrayBuffer();
+        const workbook = XLSX.read(buffer, { type: 'array' });
+        const firstSheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[firstSheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+        
+        const importedCount = await processImportedData(jsonData);
+        alert(`¡Importación exitosa! Se han añadido ${importedCount} productos desde Excel.`);
+      } else {
+        // Assume CSV
+        Papa.parse(file, {
+          header: true,
+          skipEmptyLines: true,
+          complete: async (results) => {
+            try {
+              const importedCount = await processImportedData(results.data);
+              alert(`¡Importación exitosa! Se han añadido ${importedCount} productos desde CSV.`);
+            } catch (err) {
+              console.error("Error procesando datos CSV:", err);
+              alert("Ocurrió un error al procesar el CSV.");
+            }
+          },
+          error: (err) => {
+            console.error(err);
+            alert("Error al leer el archivo CSV.");
           }
-          alert(`¡Importación exitosa! Se han añadido ${importedCount} productos.`);
-        } catch (err) {
-          console.error("Error importando CSV:", err);
-          alert("Ocurrió un error al importar el CSV.");
-        } finally {
-          setIsImporting(false);
-        }
-      },
-      error: (err) => {
-        console.error(err);
-        alert("Error al leer el archivo CSV.");
-        setIsImporting(false);
+        });
       }
-    });
-    
-    // reset input
-    e.target.value = '';
+    } catch (err) {
+      console.error("Error importando archivo:", err);
+      alert("Ocurrió un error al importar el archivo.");
+    } finally {
+      setIsImporting(false);
+      e.target.value = '';
+    }
   };
 
   const handleMigrateCatalog = async () => {
@@ -324,12 +345,12 @@ export default function InventoryManager() {
             <div className="flex gap-3">
               <label className={`flex items-center gap-2 px-4 py-3 rounded-lg font-bold text-sm border border-outline-variant transition-all cursor-pointer ${isImporting ? 'bg-surface-container-highest text-text-secondary cursor-not-allowed' : 'bg-surface-container-low text-primary hover:bg-surface-container-highest'}`}>
                 <span className="material-symbols-outlined text-[18px]">{isImporting ? 'hourglass_empty' : 'upload_file'}</span> 
-                {isImporting ? 'Importando...' : 'Importar CSV'}
+                {isImporting ? 'Importando...' : 'Importar Archivo'}
                 <input 
                   type="file" 
-                  accept=".csv" 
+                  accept=".csv, .xlsx, .xls" 
                   className="hidden" 
-                  onChange={handleImportCSV} 
+                  onChange={handleImportFile} 
                   disabled={isImporting} 
                 />
               </label>
