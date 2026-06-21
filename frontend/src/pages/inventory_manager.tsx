@@ -1,7 +1,7 @@
 import { useState, useEffect, type ChangeEvent, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { db, storage } from '../lib/firebase';
-import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, getDocs, writeBatch } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
@@ -149,6 +149,14 @@ export default function InventoryManager() {
   };
 
   const processImportedData = async (rows: any[]) => {
+    // Primero borrar el catálogo actual
+    const snapshot = await getDocs(collection(db, 'products'));
+    const batch = writeBatch(db);
+    snapshot.docs.forEach(d => {
+      batch.delete(d.ref);
+    });
+    await batch.commit();
+
     let importedCount = 0;
     for (const row of rows) {
       const sku = row.SKU || row.sku;
@@ -253,11 +261,26 @@ export default function InventoryManager() {
   const handleMigrateCatalog = async () => {
     if (!confirm("¿Deseas restaurar el catálogo base? Esto añadirá los 4 productos originales.")) return;
     try {
+      // Primero borrar el catálogo actual para evitar duplicados
+      const snapshot = await getDocs(collection(db, 'products'));
+      const batch = writeBatch(db);
+      snapshot.docs.forEach(d => {
+        batch.delete(d.ref);
+      });
+      await batch.commit();
+
       const MODELS = [
-        { type: 'Automático', dim: '38x14mm', price: 19.50, imgUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuDGO80G8SQt65AR4wUkYwUltfDs8LoaK32bXFlaJfKyT_FybVmrmvToGmAOZequsS-1f11vX_hKvryQ22HERLz5fn85KAq6YIeRKPj0b2jKIYjManWEE0GVi7Stz0wvlzudRraK1Z8ckuZt2--OmY3XuP5AQLk5mbwV42vk4NukD7Lo0XCbllu24IAHjaOG708LCn0K09vnaHo0oHg5p29HGk5Jyew0Fddc45hsEch8mJ3AqiaOWkWs46GQ1RSLZFrvxrrfImp9jMg", stock: 100, status: 'Óptimo', sku: 'AUTO-01' },
-        { type: 'Fechador', dim: '45x45mm', price: 28.00, imgUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuD9uzK6LWhBjUP--y4ZuRHJh8T7jJvVMzHrgIkZllVmBHZjhJfD2fzEa5arRBtvj1kzNdSnDJdm67pEDxRJQYk0maCpjODRSVoy6mjwrECSo2ki3E_LPMZJBaMcg8RkNVKMh49N9k3Ka4IbPLaRpygvHNLoFB7p6QO9eUHdWmPkGXMjKuNakmBw1lafVn61CnbA675EIjosRncT6CkKs5cQf74SUmFTFb167DF-fR5GyHLfTzCT0dCfr6zCKsxlYbcVywPV-Uas9rI", stock: 50, status: 'Óptimo', sku: 'FECH-01' },
-        { type: 'Tradicional', dim: '60x40mm', price: 12.00, imgUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuC_B8aoEYQ_lMmCdugdqu_trQMnSWjcCfcnHLHGe1nkRvIk0R-gyzi0PQXawGKDBKywNl2mibxMcSzd8KLlcPFOJ5KapWEgI7tMvp6Zcm_XYrmhpvHCZinpIiRQ8hgpCgMiHHeYntEczPvBzP7Rpozff3eWMgfgD6h-h5hMxoMQmdMk2TnYk-Na6bZYifA-de_DQ8aFxV_gkIN_Ynqv24HleJM_t5_6EeCMChvwwFNyc7JpSZSMBZYY1mUoLriVXIx2ZZ5uA1QwfD8", stock: 10, status: 'Bajo Stock', sku: 'TRAD-01' },
-        { type: 'Portable', dim: '30x30mm', price: 22.00, imgUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuDGO80G8SQt65AR4wUkYwUltfDs8LoaK32bXFlaJfKyT_FybVmrmvToGmAOZequsS-1f11vX_hKvryQ22HERLz5fn85KAq6YIeRKPj0b2jKIYjManWEE0GVi7Stz0wvlzudRraK1Z8ckuZt2--OmY3XuP5AQLk5mbwV42vk4NukD7Lo0XCbllu24IAHjaOG708LCn0K09vnaHo0oHg5p29HGk5Jyew0Fddc45hsEch8mJ3AqiaOWkWs46GQ1RSLZFrvxrrfImp9jMg", stock: 75, status: 'Moderado', sku: 'PORT-01' }
+        { type: 'Automático', name: 'Sello Automático Profesional', category: 'Sellos', dim: '38x14mm', price: 19.50, imgUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuDGO80G8SQt65AR4wUkYwUltfDs8LoaK32bXFlaJfKyT_FybVmrmvToGmAOZequsS-1f11vX_hKvryQ22HERLz5fn85KAq6YIeRKPj0b2jKIYjManWEE0GVi7Stz0wvlzudRraK1Z8ckuZt2--OmY3XuP5AQLk5mbwV42vk4NukD7Lo0XCbllu24IAHjaOG708LCn0K09vnaHo0oHg5p29HGk5Jyew0Fddc45hsEch8mJ3AqiaOWkWs46GQ1RSLZFrvxrrfImp9jMg", stock: 100, status: 'Óptimo', sku: 'AUTO-01', desc: 'Sello automático autoentintable ideal para uso continuo.' },
+        { type: 'Fechador', name: 'Sello Fechador Administrativo', category: 'Sellos', dim: '45x45mm', price: 28.00, imgUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuD9uzK6LWhBjUP--y4ZuRHJh8T7jJvVMzHrgIkZllVmBHZjhJfD2fzEa5arRBtvj1kzNdSnDJdm67pEDxRJQYk0maCpjODRSVoy6mjwrECSo2ki3E_LPMZJBaMcg8RkNVKMh49N9k3Ka4IbPLaRpygvHNLoFB7p6QO9eUHdWmPkGXMjKuNakmBw1lafVn61CnbA675EIjosRncT6CkKs5cQf74SUmFTFb167DF-fR5GyHLfTzCT0dCfr6zCKsxlYbcVywPV-Uas9rI", stock: 50, status: 'Óptimo', sku: 'FECH-01', desc: 'Sello con fechas rotativas para documentación.' },
+        { type: 'Tradicional', name: 'Sello Tradicional de Madera', category: 'Sellos', dim: '60x40mm', price: 12.00, imgUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuC_B8aoEYQ_lMmCdugdqu_trQMnSWjcCfcnHLHGe1nkRvIk0R-gyzi0PQXawGKDBKywNl2mibxMcSzd8KLlcPFOJ5KapWEgI7tMvp6Zcm_XYrmhpvHCZinpIiRQ8hgpCgMiHHeYntEczPvBzP7Rpozff3eWMgfgD6h-h5hMxoMQmdMk2TnYk-Na6bZYifA-de_DQ8aFxV_gkIN_Ynqv24HleJM_t5_6EeCMChvwwFNyc7JpSZSMBZYY1mUoLriVXIx2ZZ5uA1QwfD8", stock: 10, status: 'Bajo Stock', sku: 'TRAD-01', desc: 'Sello clásico de madera, requiere almohadilla externa.' },
+        { type: 'Portable', name: 'Sello Portable de Bolsillo', category: 'Sellos', dim: '30x30mm', price: 22.00, imgUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuDGO80G8SQt65AR4wUkYwUltfDs8LoaK32bXFlaJfKyT_FybVmrmvToGmAOZequsS-1f11vX_hKvryQ22HERLz5fn85KAq6YIeRKPj0b2jKIYjManWEE0GVi7Stz0wvlzudRraK1Z8ckuZt2--OmY3XuP5AQLk5mbwV42vk4NukD7Lo0XCbllu24IAHjaOG708LCn0K09vnaHo0oHg5p29HGk5Jyew0Fddc45hsEch8mJ3AqiaOWkWs46GQ1RSLZFrvxrrfImp9jMg", stock: 75, status: 'Óptimo', sku: 'PORT-01', desc: 'Diseño compacto y plegable, llévalo a todas partes.' },
+        { type: 'Almohadilla Negra', name: 'Almohadilla de Tinta Negra', category: 'Repuestos', dim: 'N/A', price: 4.50, imgUrl: "/repuestos/almohadilla_tinta_negra.png", stock: 200, status: 'Óptimo', sku: 'REP-ALM-01', desc: 'Almohadilla de recambio con tinta negra para sellos automáticos estándar.' },
+        { type: 'Almohadilla Bicolor', name: 'Almohadilla Bicolor (Azul/Rojo)', category: 'Repuestos', dim: 'N/A', price: 5.50, imgUrl: "/repuestos/almohadilla_bicolor.png", stock: 150, status: 'Óptimo', sku: 'REP-ALM-02', desc: 'Almohadilla de doble color ideal para sellos fechadores.' },
+        { type: 'Goma Grabada', name: 'Goma Personalizada Grabada', category: 'Repuestos', dim: 'Variable', price: 9.00, imgUrl: "/repuestos/goma_grabada.png", stock: 500, status: 'Óptimo', sku: 'REP-GOM-01', desc: 'Plantilla de goma cortada a láser con texto o logo personalizado para reemplazo.' },
+        { type: 'Tinta Negra', name: 'Frasco de Tinta Líquida Negra 30ml', category: 'Repuestos', dim: '30ml', price: 6.00, imgUrl: "/repuestos/frasco_tinta_negra.png", stock: 80, status: 'Óptimo', sku: 'REP-TIN-01', desc: 'Tinta especial para recargar almohadillas de sellos manuales y automáticos.' },
+        { type: 'Base Madera', name: 'Base/Montura de Madera Sola', category: 'Repuestos', dim: '60x40mm', price: 5.00, imgUrl: "/repuestos/base_madera.png", stock: 30, status: 'Óptimo', sku: 'REP-BAS-01', desc: 'Solo la montura de madera con mango ergonómico sin goma.' },
+        { type: 'Lanyard', name: 'Lanyard Corporativo Premium', category: 'Lanyards', dim: '90x2cm', price: 3.50, imgUrl: "/repuestos/lanyard_corporativo.png", stock: 300, status: 'Óptimo', sku: 'LAN-CORP-01', desc: 'Correa para el cuello con mosquetón metálico, ideal para portar tu sello.' },
+        { type: 'Dije Médico', name: 'Dije Médico (Estetoscopio)', category: 'Accesorios', dim: '2x2cm', price: 2.00, imgUrl: "/repuestos/dije_medico.png", stock: 150, status: 'Óptimo', sku: 'ACC-DIJ-MED', desc: 'Elegante dije plateado para personalizar tu sello, con temática médica.' }
       ];
       for (const m of MODELS) {
         await addDoc(collection(db, 'products'), m);

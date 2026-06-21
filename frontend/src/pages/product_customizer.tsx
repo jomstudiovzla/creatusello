@@ -26,7 +26,10 @@ export default function ProductCustomizer() {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setProducts(data);
       if (data.length > 0 && !model) {
-        setModel(data[0]);
+        const defaultStamps = data.filter((m: any) => !m.category || m.category.toLowerCase() === 'sellos');
+        if (defaultStamps.length > 0) {
+          setModel(defaultStamps[0]);
+        }
       }
     });
 
@@ -98,12 +101,12 @@ export default function ProductCustomizer() {
     );
   }
 
-  if (!model && products.length === 0) {
+  if (!model) {
     return (
       <div className="flex-grow flex flex-col items-center justify-center bg-surface-canvas min-h-[calc(100vh-80px)]">
         <span className="material-symbols-outlined text-6xl text-outline mb-4">inventory_2</span>
-        <h2 className="text-2xl font-bold text-on-surface">Catálogo Vacío</h2>
-        <p className="mt-2 text-on-surface-variant">El administrador aún no ha publicado ningún producto.</p>
+        <h2 className="text-2xl font-bold text-on-surface">No hay sellos disponibles</h2>
+        <p className="mt-2 text-on-surface-variant">El administrador aún no ha publicado modelos de sellos personalizables.</p>
       </div>
     );
   }
@@ -161,7 +164,7 @@ export default function ProductCustomizer() {
         <div className="space-y-2">
           <label className="block font-title-md text-sm font-bold text-primary">Tipo de Sello</label>
           <div className="grid grid-cols-1 gap-2">
-            {products.map((m: any) => (
+            {products.filter((m: any) => !m.category || m.category.toLowerCase() === 'sellos').map((m: any) => (
               <button 
                 key={m.id}
                 className={`flex items-center justify-between p-3 border rounded-lg transition-colors ${model.type === m.type ? 'border-primary bg-primary/5 ring-1 ring-primary' : 'border-outline-variant bg-white hover:bg-surface-container-low'}`}
