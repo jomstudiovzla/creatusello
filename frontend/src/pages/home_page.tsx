@@ -1,10 +1,31 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import { collection, onSnapshot } from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import { useStore } from '../store/useStore';
 import heroBanner from '../assets/hero_banner.png';
 import heroCustomize from '../assets/hero_customize.png';
 
 export default function HomePage() {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [products, setProducts] = useState<any[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('Todos');
+  const { addToCart, currency, exchangeRates } = useStore();
+
+  useEffect(() => {
+    const unsub = onSnapshot(collection(db, 'products'), (snapshot) => {
+      setProducts(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+    });
+    return () => unsub();
+  }, []);
+
+  const formatPrice = (baseEurPrice: number) => {
+    const rate = exchangeRates[currency] || 1;
+    const converted = baseEurPrice * rate;
+    if (currency === 'VES') return `Bs. ${converted.toFixed(2)}`;
+    if (currency === 'USD') return `$${converted.toFixed(2)}`;
+    return `${converted.toFixed(2)}€`;
+  };
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -116,6 +137,81 @@ export default function HomePage() {
               Ver modelos <span className="material-symbols-outlined ml-1">arrow_forward</span>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* NEW SECTION: Categorized Catalog */}
+      <section className="py-24 px-10 max-w-[1280px] mx-auto bg-surface-canvas" id="catalogo">
+        <div className="text-center mb-12">
+          <span className="text-vibrant-purple font-bold tracking-widest uppercase text-sm">Nuestro Inventario</span>
+          <h2 className="font-headline-lg text-4xl font-bold text-primary mt-2">Catálogo Completo</h2>
+          <p className="text-text-secondary mt-4 max-w-2xl mx-auto">Explora todos nuestros productos organizados por categoría. Desde sellos personalizables hasta repuestos y accesorios exclusivos.</p>
+        </div>
+
+        {/* Category Tabs */}
+        <div className="flex flex-wrap justify-center gap-4 mb-12">
+          {['Todos', 'Sellos', 'Repuestos', 'Lanyards', 'Accesorios'].map(cat => (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`px-6 py-3 rounded-full font-bold text-sm transition-all shadow-md ${selectedCategory === cat ? 'bg-primary text-white scale-105' : 'bg-white text-text-secondary hover:bg-surface-container-low hover:text-primary border border-outline-variant'}`}
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+
+        {/* Products Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+          {products.filter(p => selectedCategory === 'Todos' || p.category === selectedCategory || (selectedCategory === 'Sellos' && (!p.category || p.category === 'Sellos'))).map(product => (
+            <div key={product.id} className="bg-white rounded-2xl shadow-lg border border-outline-variant overflow-hidden hover:shadow-2xl hover:-translate-y-1 transition-all flex flex-col group">
+              <div className="h-48 bg-surface-container flex justify-center items-center overflow-hidden p-4 relative">
+                {product.imgUrl ? (
+                  <img src={product.imgUrl} alt={product.type || product.name} className="max-w-full max-h-full object-contain drop-shadow-md group-hover:scale-110 transition-transform duration-500" />
+                ) : (
+                  <span className="material-symbols-outlined text-6xl text-outline">image</span>
+                )}
+                {product.stock <= 10 && product.stock > 0 && (
+                  <span className="absolute top-2 right-2 bg-vibrant-orange text-white text-[10px] font-bold px-2 py-1 rounded-full">¡Pocas unidades!</span>
+                )}
+                {product.stock === 0 && (
+                  <span className="absolute top-2 right-2 bg-error text-white text-[10px] font-bold px-2 py-1 rounded-full">Agotado</span>
+                )}
+              </div>
+              <div className="p-6 flex flex-col flex-grow">
+                <div className="flex justify-between items-start mb-2">
+                  <span className="text-[10px] uppercase font-bold text-vibrant-blue tracking-widest">{product.category || 'Sellos'}</span>
+                  <span className="text-xs text-text-secondary font-mono">{product.sku}</span>
+                </div>
+                <h3 className="font-title-md text-lg font-bold text-primary leading-tight mb-2">{product.name || product.type}</h3>
+                <p className="text-xs text-text-secondary line-clamp-2 mb-4">{product.desc || `Sello profesional modelo ${product.type}. Dimensiones: ${product.dim}.`}</p>
+                
+                <div className="mt-auto flex items-center justify-between">
+                  <span className="text-xl font-bold text-primary">{formatPrice(product.price)}</span>
+                  
+                  {(!product.category || product.category === 'Sellos') ? (
+                    <Link to="/customizer" className="bg-primary/10 text-primary hover:bg-primary hover:text-white w-10 h-10 rounded-full flex items-center justify-center transition-colors">
+                      <span className="material-symbols-outlined text-sm font-bold">edit</span>
+                    </Link>
+                  ) : (
+                    <button 
+                      onClick={() => addToCart({...product, qty: 1})}
+                      disabled={product.stock === 0}
+                      className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${product.stock > 0 ? 'bg-primary/10 text-primary hover:bg-primary hover:text-white' : 'bg-surface-container text-outline cursor-not-allowed'}`}
+                    >
+                      <span className="material-symbols-outlined text-sm font-bold">shopping_cart</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+          {products.length === 0 && (
+            <div className="col-span-full py-12 text-center">
+              <span className="material-symbols-outlined text-4xl text-outline mb-2">inventory_2</span>
+              <p className="text-text-secondary">El catálogo está vacío.</p>
+            </div>
+          )}
         </div>
       </section>
 

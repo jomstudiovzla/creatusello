@@ -5,6 +5,7 @@ import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot } from 'fireb
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 interface Product {
   id: string;
@@ -182,10 +183,41 @@ export default function InventoryManager() {
       
       if (isExcel) {
         const buffer = await file.arrayBuffer();
-        const workbook = XLSX.read(buffer, { type: 'array' });
-        const firstSheetName = workbook.SheetNames[0];
-        const worksheet = workbook.Sheets[firstSheetName];
-        const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: '' });
+        
+        // 1. Read textual data using XLSX (reliable JSON mapping)
+        const workbookXLSX = XLSX.read(buffer, { type: 'array' });
+        const firstSheetName = workbookXLSX.SheetNames[0];
+        const worksheetXLSX = workbookXLSX.Sheets[firstSheetName];
+        const jsonData = XLSX.utils.sheet_to_json<any>(worksheetXLSX, { defval: '' });
+        
+        // 2. Extract embedded images using ExcelJS
+        try {
+          const workbookExcelJS = new ExcelJS.Workbook();
+          await workbookExcelJS.xlsx.load(buffer);
+          const worksheetExcelJS = workbookExcelJS.worksheets[0];
+          const images = worksheetExcelJS.getImages();
+          
+          for (const image of images) {
+            // tl.row is 0-indexed. Row 0 is header. Data starts at tl.row >= 1.
+            const jsonIndex = (image.range.tl.nativeRow !== undefined ? image.range.tl.nativeRow : image.range.tl.row) - 1;
+            
+            if (jsonIndex >= 0 && jsonIndex < jsonData.length) {
+              const imgMedia = workbookExcelJS.getImage(Number(image.imageId));
+              if (imgMedia && imgMedia.buffer) {
+                // Upload to Firebase
+                const blob = new Blob([imgMedia.buffer], { type: `image/${imgMedia.extension}` });
+                const imgRef = ref(storage, `products/excel_import_${Date.now()}_row${jsonIndex}.${imgMedia.extension}`);
+                await uploadBytes(imgRef, blob);
+                const url = await getDownloadURL(imgRef);
+                
+                // Assign URL to jsonData
+                jsonData[jsonIndex].imgUrl = url;
+              }
+            }
+          }
+        } catch (imgErr) {
+          console.warn("Could not extract embedded images, continuing with text data.", imgErr);
+        }
         
         const importedCount = await processImportedData(jsonData);
         alert(`¡Importación exitosa! Se han añadido ${importedCount} productos desde Excel.`);

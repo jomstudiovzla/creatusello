@@ -18,6 +18,8 @@ const PRODUCTS = [
   { sku: 'REP-GOM-01', name: 'Goma Personalizada Grabada', category: 'Repuestos', dim: 'Variable', price: '9.00', stock: 500, desc: 'Plantilla de goma cortada a láser con texto o logo personalizado para reemplazo.', localImg: "/Users/macbook/.gemini/antigravity-ide/brain/49244f42-fd6a-4008-83e6-85d98593395b/goma_grabada_1782045936736.png" },
   { sku: 'REP-TIN-01', name: 'Frasco de Tinta Líquida Negra 30ml', category: 'Repuestos', dim: '30ml', price: '6.00', stock: 80, desc: 'Tinta especial para recargar almohadillas de sellos manuales y automáticos.', localImg: "/Users/macbook/.gemini/antigravity-ide/brain/49244f42-fd6a-4008-83e6-85d98593395b/frasco_tinta_negra_1782045945565.png" },
   { sku: 'REP-BAS-01', name: 'Base/Montura de Madera Sola', category: 'Repuestos', dim: '60x40mm', price: '5.00', stock: 30, desc: 'Solo la montura de madera con mango ergonómico sin goma.', localImg: "/Users/macbook/.gemini/antigravity-ide/brain/49244f42-fd6a-4008-83e6-85d98593395b/base_madera_1782045953932.png" },
+  { sku: 'LAN-CORP-01', name: 'Lanyard Corporativo Premium', category: 'Lanyards', dim: '90x2cm', price: '3.50', stock: 300, desc: 'Correa para el cuello con mosquetón metálico, ideal para portar tu sello.', localImg: "/Users/macbook/.gemini/antigravity-ide/brain/49244f42-fd6a-4008-83e6-85d98593395b/lanyard_corporativo_1782047025983.png" },
+  { sku: 'ACC-DIJ-MED', name: 'Dije Médico (Estetoscopio)', category: 'Accesorios', dim: '2x2cm', price: '2.00', stock: 150, desc: 'Elegante dije plateado para personalizar tu sello, con temática médica.', localImg: "/Users/macbook/.gemini/antigravity-ide/brain/49244f42-fd6a-4008-83e6-85d98593395b/dije_medico_1782047054861.png" },
 ];
 
 async function generate() {
