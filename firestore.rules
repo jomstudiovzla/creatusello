@@ -30,6 +30,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Reglas para tipografías
+    match /typographies/{document=**} {
+      allow read: if true;
+      allow write: if isAdmin() || (request.auth != null && request.resource.data.userId == request.auth.uid);
+    }
+
     // Reglas para la colección 'orders'
     match /orders/{document=**} {
       allow read: if isAdmin();

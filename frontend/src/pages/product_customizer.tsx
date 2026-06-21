@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, type ChangeEvent } from 'react';
 import { useStore } from '../store/useStore';
 import { db } from '../lib/firebase';
-import { collection, onSnapshot } from 'firebase/firestore';
+import { collection, onSnapshot, addDoc } from 'firebase/firestore';
 import { resolveImageUrl, preloadImages } from '../utils/imageUtils';
 
 export default function ProductCustomizer() {
@@ -18,7 +18,7 @@ export default function ProductCustomizer() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
-  const { addToCart, currency, exchangeRates, openCart } = useStore();
+  const { user, addToCart, currency, exchangeRates, openCart } = useStore();
 
   useEffect(() => {
     const unsubProducts = onSnapshot(collection(db, 'products'), (snapshot) => {
@@ -38,7 +38,8 @@ export default function ProductCustomizer() {
     });
 
     const unsubFonts = onSnapshot(collection(db, 'typographies'), (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter((f: any) => !f.userId || (user && f.userId === user.uid));
       setTypographies(data);
       data.forEach(async (font: any) => {
         try {
@@ -56,7 +57,7 @@ export default function ProductCustomizer() {
       unsubProducts();
       unsubFonts();
     };
-  }, []);
+  }, [user]);
 
   const formatPrice = (baseEurPrice: number) => {
     const rate = exchangeRates[currency] || 1;
@@ -72,12 +73,34 @@ export default function ProductCustomizer() {
     
     try {
       const fontName = 'CustomUserFont_' + Date.now();
-      const arrayBuffer = await file.arrayBuffer();
-      const fontFace = new FontFace(fontName, arrayBuffer);
-      await fontFace.load();
-      document.fonts.add(fontFace);
-      setFontFamily(fontName);
-      setFontFile(file);
+      
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64Url = event.target?.result as string;
+        try {
+          const fontFace = new FontFace(fontName, `url(${base64Url})`);
+          await fontFace.load();
+          document.fonts.add(fontFace);
+          setFontFamily(fontName);
+          setFontFile(file);
+          
+          if (user) {
+            await addDoc(collection(db, 'typographies'), {
+              name: file.name.split('.')[0],
+              fileUrl: base64Url,
+              fontFamily: fontName,
+              userId: user.uid
+            });
+          } else {
+             // For guests, add it locally so it shows in the list
+             setTypographies(prev => [...prev, { fontFamily: fontName, name: fontName, fileUrl: base64Url }]);
+          }
+        } catch (innerErr) {
+          console.error("Error cargando o guardando fuente:", innerErr);
+        }
+      };
+      reader.readAsDataURL(file);
+
     } catch (err) {
       console.error("Error loading font:", err);
       alert("Error al cargar la tipografía. Por favor intenta con otro archivo.");
