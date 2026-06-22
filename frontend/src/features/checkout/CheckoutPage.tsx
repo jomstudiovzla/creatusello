@@ -84,7 +84,8 @@ export default function CheckoutPage() {
           unitPrice: item.model.price,
           subtotal: item.model.price * item.quantity,
           customText: item.text,
-          logoUrl: item.logoDataUrl || item.model.imgUrl
+          logoUrl: item.logoDataUrl || item.model.imgUrl,
+          fontFamily: item.fontFamily
         })),
         subtotalBase,
         totalVes,

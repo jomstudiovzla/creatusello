@@ -27,10 +27,11 @@ export default function ProductCustomizer() {
         item.imgUrl = resolveImageUrl(item.imgUrl);
         return item;
       });
-      setProducts(data);
-      preloadImages(data.map(p => p.imgUrl));
-      if (data.length > 0 && !model) {
-        const defaultStamps = data.filter((m: any) => !m.category || m.category.toLowerCase() === 'sellos');
+      const uniqueData = Array.from(new Map(data.map(item => [item.sku, item])).values());
+      setProducts(uniqueData);
+      preloadImages(uniqueData.map(p => p.imgUrl));
+      if (uniqueData.length > 0 && !model) {
+        const defaultStamps = uniqueData.filter((m: any) => !m.category || m.category.toLowerCase() === 'sellos');
         if (defaultStamps.length > 0) {
           setModel(defaultStamps[0]);
         }

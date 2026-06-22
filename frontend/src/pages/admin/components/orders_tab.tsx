@@ -106,6 +106,7 @@ export default function OrdersTab() {
                       <div>
                         <p className="font-bold text-primary">{item.productName || item.model?.type || 'Personalizado'} x{item.quantity || 1}</p>
                         <p className="text-sm text-text-secondary mt-1">Texto: <span className="italic">"{item.customText || item.text || 'Sin texto'}"</span></p>
+                        <p className="text-sm text-text-secondary mt-1">Tipografía: <span className="font-bold">{item.fontFamily || 'Predeterminada'}</span></p>
                         {order.notes && <p className="text-sm text-text-secondary mt-2"><b>Notas del cliente:</b> {order.notes}</p>}
                         
                         <p className="text-xs text-text-secondary mt-2">
@@ -116,12 +117,13 @@ export default function OrdersTab() {
                         {item.logoUrl || item.logoFileUrl ? (
                           <a 
                             href={item.logoUrl || item.logoFileUrl} 
+                            download={`logo_orden_${order.id.slice(0,8)}.png`}
                             target="_blank" 
                             rel="noreferrer"
                             className="bg-vibrant-teal text-white px-4 py-2 rounded font-bold text-sm flex items-center gap-2 hover:bg-vibrant-teal/90 transition-colors shadow-sm"
                           >
-                            <span className="material-symbols-outlined text-sm">image</span>
-                            Ver Logo Adjunto
+                            <span className="material-symbols-outlined text-sm">download</span>
+                            Descargar Logo
                           </a>
                         ) : (
                           <span className="bg-surface-container text-text-secondary px-4 py-2 rounded font-bold text-sm flex items-center gap-2 border border-outline-variant">

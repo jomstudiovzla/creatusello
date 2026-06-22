@@ -62,7 +62,8 @@ export default function InventoryManager() {
         item.imgUrl = resolveImageUrl(item.imgUrl);
         return item;
       });
-      setProducts(data);
+      const uniqueData = Array.from(new Map(data.map(item => [item.sku, item])).values());
+      setProducts(uniqueData);
     });
     const unsubTypographies = onSnapshot(collection(db, 'typographies'), (snapshot) => {
       setTypographies(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Typography)));
