@@ -20,8 +20,10 @@ service cloud.firestore {
     match /products/{document=**} {
       // Cualquier persona puede leer el catálogo de productos
       allow read: if true;
-      // Solo el administrador puede crear, actualizar o borrar productos
-      allow write: if isAdmin();
+      // Permitir actualizar para descontar stock en checkout
+      allow update: if true;
+      // Solo el administrador puede crear o borrar productos
+      allow create, delete: if isAdmin();
     }
     
     // Reglas para la configuración (BCV Automático)
@@ -42,12 +44,17 @@ service cloud.firestore {
       allow write: if isAdmin() || (request.auth != null && request.resource.data.userId == request.auth.uid);
     }
 
-    // Reglas para la colección 'orders'
+    // Reglas para la colección 'orders' (legacy)
     match /orders/{document=**} {
       allow read: if isAdmin();
-      // Permitir crear órdenes solo si el subtotal y la tasa bcv existen (como mínimo para evitar inyección de basura)
-      allow create: if request.resource.data.keys().hasAll(['customerInfo', 'items', 'subtotalBase', 'totalVes']) 
-                    && request.resource.data.items is list;
+      allow create: if true;
+      allow update, delete: if isAdmin();
+    }
+
+    // Reglas para la colección 'pedidos' (Nueva)
+    match /pedidos/{document=**} {
+      allow read: if isAdmin() || (request.auth != null && request.auth.uid == request.resource.data.customerInfo.uid);
+      allow create: if true;
       allow update, delete: if isAdmin();
     }
 
