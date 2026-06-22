@@ -269,7 +269,7 @@ export default function App() {
   }, []);
 
   return (
-    <BrowserRouter basename="/creatusello">
+    <Router basename="/creatusello">
       <Toaster position="top-right" />
       <div className="bg-background text-on-surface font-body-md min-h-screen flex flex-col">
         <Navigation />
