@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { ordersApi } from '../../shared/api/firebaseRepository';
 import { customerInfoSchema, deliveryDetailsSchema, pickupDetailsSchema } from '../../entities/order/schemas';
 import { z } from 'zod';
+import { processAtomicOrder } from '../../features/checkout/model/processOrder';
+import toast from 'react-hot-toast';
 
 export default function CheckoutPage() {
   const { cart, exchangeRates, clearCart, currency } = useStore();
@@ -70,20 +72,33 @@ export default function CheckoutPage() {
         totalVes,
         bcvRateAtPurchase: vesPerUsd,
         status: 'PENDING' as const,
-        notes
+        notes,
+        // Added for FSD compatibility:
+        total: totalVes,
+        customerName: customer.name,
+        customerEmail: customer.email,
       };
       
-      await ordersApi.createOrder(orderData);
+      const result = await processAtomicOrder(orderData as any);
       
+      if (!result.success) {
+        throw new Error(result.error || "Error en transacción atómica");
+      }
+      
+      toast.success("¡Pedido confirmado con éxito! Redirigiendo...", { duration: 4000 });
       clearCart();
       navigate('/success');
       
-    } catch (err: unknown) {
+    } catch (err: any) {
       if (err instanceof z.ZodError) {
         const zodErr = err as any;
-        setErrors(zodErr.errors.map((e: z.ZodIssue) => e.message));
+        const msgs = zodErr.errors.map((e: z.ZodIssue) => e.message);
+        setErrors(msgs);
+        toast.error("Por favor, corrige los errores en el formulario.");
       } else {
-        setErrors(["Hubo un error al procesar tu pedido. Intenta nuevamente."]);
+        const msg = err.message || "Hubo un error al procesar tu pedido. Intenta nuevamente.";
+        setErrors([msg]);
+        toast.error(msg);
       }
     } finally {
       setIsSubmitting(false);

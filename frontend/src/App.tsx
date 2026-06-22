@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link, useNavigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { initRealtimeNotifications, stopRealtimeNotifications } from './infrastructure/notifications/realtimeListener';
+import toast from 'react-hot-toast';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from './lib/firebase';
@@ -31,6 +34,24 @@ function Navigation() {
 
   // Mount the global BCV rate listener
   useBcvRate();
+
+  const [unreadOrders, setUnreadOrders] = useState(0);
+
+  useEffect(() => {
+    if (user?.rol === 'admin') {
+      initRealtimeNotifications((order) => {
+        toast.success(`¡Nuevo pedido de ${order.customerName || 'Cliente'}!`, {
+          icon: '🔔',
+          duration: 6000,
+          style: { border: '1px solid #1A237E', padding: '16px', color: '#1A237E', fontWeight: 'bold' }
+        });
+        setUnreadOrders(prev => prev + 1);
+      });
+    } else {
+      stopRealtimeNotifications();
+    }
+    return () => stopRealtimeNotifications();
+  }, [user]);
 
   const handleLogout = async () => {
     await signOut(auth);
@@ -86,6 +107,13 @@ function Navigation() {
             <span className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">shopping_cart</span>
             {cart.length > 0 && <span className="absolute -top-2 -right-2 bg-error text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">{cart.length}</span>}
           </button>
+          
+          {user?.rol === 'admin' && (
+            <button onClick={() => navigate('/admin/dashboard')} className="relative flex items-center bg-transparent border-none outline-none ml-2">
+              <span className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">notifications</span>
+              {unreadOrders > 0 && <span className="absolute -top-2 -right-2 bg-vibrant-orange text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">{unreadOrders}</span>}
+            </button>
+          )}
           
           {user ? (
             <div className="relative">
@@ -242,6 +270,7 @@ export default function App() {
 
   return (
     <BrowserRouter basename="/creatusello">
+      <Toaster position="top-right" />
       <div className="bg-background text-on-surface font-body-md min-h-screen flex flex-col">
         <Navigation />
         <CartDrawer />
