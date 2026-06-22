@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '../../store/useStore';
 import { useNavigate } from 'react-router-dom';
+import { db } from '../../lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import { ordersApi } from '../../shared/api/firebaseRepository';
 import { customerInfoSchema, deliveryDetailsSchema, pickupDetailsSchema } from '../../entities/order/schemas';
 import { z } from 'zod';
@@ -8,15 +10,32 @@ import { processAtomicOrder } from '../../features/checkout/model/processOrder';
 import toast from 'react-hot-toast';
 
 export default function CheckoutPage() {
-  const { cart, exchangeRates, clearCart, currency } = useStore();
+  const { cart, exchangeRates, clearCart, currency, user } = useStore();
   const navigate = useNavigate();
   
   const [method, setMethod] = useState<'DELIVERY' | 'PICKUP'>('DELIVERY');
-  const [customer, setCustomer] = useState({ name: '', cedula: '', phone: '', email: '' });
+  const [customer, setCustomer] = useState({ name: '', cedula: '', phone: '', email: user?.email || '' });
   const [delivery, setDelivery] = useState({ address: '', reference: '', city: '', date: '', time: '' });
   const [pickup, setPickup] = useState({ branch: 'Sede Principal (Caracas)', date: '', time: '' });
   const [notes, setNotes] = useState('');
   
+  useEffect(() => {
+    if (user?.uid) {
+      getDoc(doc(db, 'users', user.uid)).then(snap => {
+        if (snap.exists()) {
+          const data = snap.data();
+          setCustomer(prev => ({
+            ...prev,
+            name: data.name || prev.name,
+            cedula: data.cedula || prev.cedula,
+            phone: data.phone || prev.phone,
+            email: user.email || prev.email,
+          }));
+        }
+      }).catch(err => console.error("Error auto-filling profile:", err));
+    }
+  }, [user]);
+
   const [errors, setErrors] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 

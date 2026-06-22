@@ -108,10 +108,10 @@ function Navigation() {
             {cart.length > 0 && <span className="absolute -top-2 -right-2 bg-error text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">{cart.length}</span>}
           </button>
           
-          {user?.rol === 'admin' && (
-            <button onClick={() => navigate('/admin/dashboard')} className="relative flex items-center bg-transparent border-none outline-none ml-2">
+          {user && (
+            <button onClick={() => navigate(user.rol === 'admin' ? '/admin/dashboard' : '/profile')} className="relative flex items-center bg-transparent border-none outline-none ml-2 mr-2">
               <span className="material-symbols-outlined text-on-surface-variant cursor-pointer hover:text-primary transition-colors">notifications</span>
-              {unreadOrders > 0 && <span className="absolute -top-2 -right-2 bg-vibrant-orange text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">{unreadOrders}</span>}
+              {user.rol === 'admin' && unreadOrders > 0 && <span className="absolute -top-2 -right-2 bg-vibrant-orange text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">{unreadOrders}</span>}
             </button>
           )}
           
