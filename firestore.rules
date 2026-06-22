@@ -53,7 +53,7 @@ service cloud.firestore {
 
     // Reglas para la colección 'pedidos' (Nueva)
     match /pedidos/{document=**} {
-      allow read: if isAdmin() || (request.auth != null && request.auth.uid == request.resource.data.customerInfo.uid);
+      allow read: if isAdmin() || (request.auth != null && (resource.data.customerEmail == request.auth.token.email || resource.data.customerInfo.email == request.auth.token.email));
       allow create: if true;
       allow update, delete: if isAdmin();
     }
