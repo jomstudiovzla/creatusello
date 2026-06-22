@@ -76,8 +76,8 @@ export default function CheckoutPage() {
       const orderData = {
         customerInfo: customer,
         deliveryMethod: method,
-        deliveryDetails: method === 'DELIVERY' ? delivery : undefined,
-        pickupDetails: method === 'PICKUP' ? pickup : undefined,
+        deliveryDetails: method === 'DELIVERY' ? delivery : null,
+        pickupDetails: method === 'PICKUP' ? pickup : null,
         items: cart.map(item => ({
           productId: item.model.id,
           productName: item.model.name || item.model.type,
