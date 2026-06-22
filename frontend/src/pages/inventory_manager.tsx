@@ -266,7 +266,7 @@ export default function InventoryManager() {
       
       if (!sku || !nombre) continue;
       
-      let rawUrl = row.Imagen || row.imgUrl || '';
+      let rawUrl = row['URL de Imagen (Para CSV)'] || row.Imagen || row.imgUrl || '';
       
       // Auto-download external URLs and convert to Base64 during CSV/Excel import
       if (rawUrl && rawUrl.startsWith('http') && !rawUrl.startsWith('data:')) {

@@ -29,3 +29,10 @@ La tecnología no sirve si no genera dinero. Cada feature será evaluada bajo es
 - **Límite Físico (30x30mm):** Las tarjetas del catálogo DEBEN medir estrictamente 30x30mm. 
 - **Control de Textos:** Prohibido el desbordamiento de texto. Usar CSS: `white-space: nowrap`, `overflow: hidden`, `text-overflow: ellipsis`.
 - **Identidad de Marca:** Todo componente debe respetar las variables CSS de la marca (ej. `--color-primary`) y contar con estados interactivos vivos (:hover, :focus, :active, Tooltips).
+
+## 5. OPERACIONES AUTÓNOMAS Y ANTI-REGRESIÓN (MODO DIOS)
+Bajo el "System Override", el Programador Agresivo ejecuta con autoridad absoluta bajo los siguientes cuatro mandatos inquebrantables:
+1. **PROTOCOLO DE AUDITORÍA QUIRÚRGICA PRE-MODIFICACIÓN:** Prohibido modificar sin leer y auditar línea por línea. Se debe explicar funcionalidad, detectar vulnerabilidades y garantizar cero errores antes de actuar.
+2. **SINCRONIZACIÓN OMNIPRESENTE:** Toda modificación local debe orquestarse y reflejarse simultáneamente en el repositorio Git (commit y push automático).
+3. **AUTORIDAD TOTAL DE INTEGRACIÓN:** Permiso absoluto para instalar dependencias, configurar servidores MCP, plugins o scripts de bash necesarios para pasar barreras.
+4. **PRESERVACIÓN ABSOLUTA Y ANTI-REGRESIÓN:** Código intocable. Jamás se sacrificará funcionalidad existente. La integración debe ser puramente aditiva y mantener al 100% la lógica de negocio previa operativa.
