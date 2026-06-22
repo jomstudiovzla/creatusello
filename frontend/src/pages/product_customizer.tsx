@@ -14,8 +14,6 @@ export default function ProductCustomizer() {
   const [isLoading, setIsLoading] = useState(true);
 
   const [logoData, setLogoData] = useState<string | null>(null);
-  const [fontFile, setFontFile] = useState<File | null>(null);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const { user, addToCart, currency, exchangeRates, openCart } = useStore();
@@ -83,7 +81,6 @@ export default function ProductCustomizer() {
           await fontFace.load();
           document.fonts.add(fontFace);
           setFontFamily(fontName);
-          setFontFile(file);
           
           if (user) {
             await addDoc(collection(db, 'typographies'), {
@@ -114,7 +111,6 @@ export default function ProductCustomizer() {
       const reader = new FileReader();
       reader.onload = (event) => {
         setLogoData(event.target?.result as string);
-        setLogoFile(file);
       };
       reader.readAsDataURL(file);
     }
@@ -297,13 +293,13 @@ export default function ProductCustomizer() {
 
             <button 
               onClick={() => {
+                const selectedFont = typographies.find(t => t.fontFamily === fontFamily);
                 addToCart({
                   id: Date.now().toString(),
                   model,
                   text,
                   fontFamily,
-                  fontFile,
-                  logoFile,
+                  fontDataUrl: selectedFont ? selectedFont.fileUrl : null,
                   logoDataUrl: logoData,
                   quantity: 1
                 });

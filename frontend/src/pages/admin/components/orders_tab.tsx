@@ -113,7 +113,7 @@ export default function OrdersTab() {
                           <b>Entrega:</b> {order.deliveryMethod === 'DELIVERY' ? `Delivery a ${order.deliveryDetails?.city || ''}` : `Retiro en ${order.pickupDetails?.branch || 'Tienda'}`}
                         </p>
                       </div>
-                      <div className="flex gap-2 items-start">
+                      <div className="flex flex-col md:flex-row gap-2 items-start mt-4">
                         {item.logoUrl || item.logoFileUrl ? (
                           <a 
                             href={item.logoUrl || item.logoFileUrl} 
@@ -131,6 +131,19 @@ export default function OrdersTab() {
                             Sin Logo
                           </span>
                         )}
+
+                        {item.fontUrl ? (
+                          <a 
+                            href={item.fontUrl} 
+                            download={`fuente_${item.fontFamily}.ttf`}
+                            target="_blank" 
+                            rel="noreferrer"
+                            className="bg-primary text-white px-4 py-2 rounded font-bold text-sm flex items-center gap-2 hover:bg-primary/90 transition-colors shadow-sm"
+                          >
+                            <span className="material-symbols-outlined text-sm">download</span>
+                            Descargar Tipografía
+                          </a>
+                        ) : null}
                       </div>
                     </div>
                   ))}

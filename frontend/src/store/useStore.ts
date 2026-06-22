@@ -12,6 +12,7 @@ export interface CartItem {
   text: string;
   fontFamily: string;
   fontFile?: File | null;
+  fontDataUrl?: string | null;
   logoFile?: File | null;
   logoDataUrl?: string | null; // for preview
   quantity: number;

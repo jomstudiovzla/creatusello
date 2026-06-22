@@ -85,7 +85,8 @@ export default function CheckoutPage() {
           subtotal: item.model.price * item.quantity,
           customText: item.text,
           logoUrl: item.logoDataUrl || item.model.imgUrl,
-          fontFamily: item.fontFamily
+          fontFamily: item.fontFamily,
+          fontUrl: item.fontDataUrl || null
         })),
         subtotalBase,
         totalVes,
@@ -98,7 +99,10 @@ export default function CheckoutPage() {
         customerEmail: customer.email,
       };
       
-      const result = await processAtomicOrder(orderData as any);
+      // Firebase rechaza valores undefined. Limpiamos el objeto:
+      const cleanOrderData = JSON.parse(JSON.stringify(orderData));
+      
+      const result = await processAtomicOrder(cleanOrderData as any);
       
       if (!result.success) {
         throw new Error(result.error || "Error en transacción atómica");
