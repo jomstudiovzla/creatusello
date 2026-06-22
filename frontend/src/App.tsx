@@ -203,7 +203,7 @@ export default function App() {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
-          const userDoc = await getDoc(doc(db, 'usuarios', firebaseUser.uid));
+          const userDoc = await getDoc(doc(db, 'users', firebaseUser.uid));
           let rol = 'user';
           if (userDoc.exists()) {
             rol = userDoc.data().rol || 'user';

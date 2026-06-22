@@ -127,19 +127,19 @@ export default function CheckoutPage() {
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-bold mb-1">Nombre Completo</label>
-                <input required value={customer.name} onChange={e => setCustomer({...customer, name: e.target.value})} className="w-full p-3 border rounded-lg" placeholder="Ej. Juan Pérez" />
+                <input value={customer.name} onChange={e => setCustomer({...customer, name: e.target.value})} className="w-full p-3 border rounded-lg" placeholder="Ej. Juan Pérez" />
               </div>
               <div>
                 <label className="block text-sm font-bold mb-1">Cédula o RIF</label>
-                <input required value={customer.cedula} onChange={e => setCustomer({...customer, cedula: e.target.value})} className="w-full p-3 border rounded-lg" placeholder="Ej. V-12345678" />
+                <input value={customer.cedula} onChange={e => setCustomer({...customer, cedula: e.target.value})} className="w-full p-3 border rounded-lg" placeholder="Ej. V-12345678" />
               </div>
               <div>
                 <label className="block text-sm font-bold mb-1">Teléfono</label>
-                <input required value={customer.phone} onChange={e => setCustomer({...customer, phone: e.target.value})} className="w-full p-3 border rounded-lg" placeholder="Ej. 0414 123 4567" />
+                <input value={customer.phone} onChange={e => setCustomer({...customer, phone: e.target.value})} className="w-full p-3 border rounded-lg" placeholder="Ej. 0414 123 4567" />
               </div>
               <div>
                 <label className="block text-sm font-bold mb-1">Correo Electrónico</label>
-                <input required type="email" value={customer.email} onChange={e => setCustomer({...customer, email: e.target.value})} className="w-full p-3 border rounded-lg" placeholder="ejemplo@correo.com" />
+                <input type="email" value={customer.email} onChange={e => setCustomer({...customer, email: e.target.value})} className="w-full p-3 border rounded-lg" placeholder="ejemplo@correo.com" />
               </div>
             </div>
           </section>
@@ -164,11 +164,11 @@ export default function CheckoutPage() {
               <div className="space-y-4 animate-in fade-in slide-in-from-top-4 duration-300">
                 <div>
                   <label className="block text-sm font-bold mb-1">Ciudad</label>
-                  <input required value={delivery.city} onChange={e => setDelivery({...delivery, city: e.target.value})} className="w-full p-3 border rounded-lg" />
+                  <input value={delivery.city} onChange={e => setDelivery({...delivery, city: e.target.value})} className="w-full p-3 border rounded-lg" />
                 </div>
                 <div>
                   <label className="block text-sm font-bold mb-1">Dirección Exacta</label>
-                  <textarea required value={delivery.address} onChange={e => setDelivery({...delivery, address: e.target.value})} className="w-full p-3 border rounded-lg resize-none" rows={2} />
+                  <textarea value={delivery.address} onChange={e => setDelivery({...delivery, address: e.target.value})} className="w-full p-3 border rounded-lg resize-none" rows={2} />
                 </div>
                 <div>
                   <label className="block text-sm font-bold mb-1">Punto de Referencia</label>
@@ -177,11 +177,11 @@ export default function CheckoutPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-bold mb-1">Fecha</label>
-                    <input required type="date" value={delivery.date} onChange={e => setDelivery({...delivery, date: e.target.value})} className="w-full p-3 border rounded-lg" />
+                    <input type="date" value={delivery.date} onChange={e => setDelivery({...delivery, date: e.target.value})} className="w-full p-3 border rounded-lg" />
                   </div>
                   <div>
                     <label className="block text-sm font-bold mb-1">Hora aprox.</label>
-                    <input required type="time" value={delivery.time} onChange={e => setDelivery({...delivery, time: e.target.value})} className="w-full p-3 border rounded-lg" />
+                    <input type="time" value={delivery.time} onChange={e => setDelivery({...delivery, time: e.target.value})} className="w-full p-3 border rounded-lg" />
                   </div>
                 </div>
               </div>
@@ -196,11 +196,11 @@ export default function CheckoutPage() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-bold mb-1">Fecha de Retiro</label>
-                    <input required type="date" value={pickup.date} onChange={e => setPickup({...pickup, date: e.target.value})} className="w-full p-3 border rounded-lg" />
+                    <input type="date" value={pickup.date} onChange={e => setPickup({...pickup, date: e.target.value})} className="w-full p-3 border rounded-lg" />
                   </div>
                   <div>
                     <label className="block text-sm font-bold mb-1">Hora aprox.</label>
-                    <input required type="time" value={pickup.time} onChange={e => setPickup({...pickup, time: e.target.value})} className="w-full p-3 border rounded-lg" />
+                    <input type="time" value={pickup.time} onChange={e => setPickup({...pickup, time: e.target.value})} className="w-full p-3 border rounded-lg" />
                   </div>
                 </div>
               </div>
