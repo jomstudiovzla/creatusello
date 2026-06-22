@@ -46,7 +46,8 @@ export async function processAtomicOrder(orderData: OrderData): Promise<{ succes
       // 2. Fase de Escritura: Restar inventario y registrar la orden
       for (let i = 0; i < productSnapshots.length; i++) {
         const snap = productSnapshots[i];
-        const currentStock = snap.data().stock || 0;
+        const data = snap.data();
+        const currentStock = data ? (data.stock || 0) : 0;
         const requestedQuantity = orderData.items[i].quantity;
         
         transaction.update(snap.ref, { stock: currentStock - requestedQuantity });

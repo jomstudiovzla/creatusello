@@ -3,7 +3,6 @@ import { useStore } from '../../store/useStore';
 import { useNavigate } from 'react-router-dom';
 import { db } from '../../lib/firebase';
 import { doc, getDoc } from 'firebase/firestore';
-import { ordersApi } from '../../shared/api/firebaseRepository';
 import { customerInfoSchema, deliveryDetailsSchema, pickupDetailsSchema } from '../../entities/order/schemas';
 import { z } from 'zod';
 import { processAtomicOrder } from '../../features/checkout/model/processOrder';

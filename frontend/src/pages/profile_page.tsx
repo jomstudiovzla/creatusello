@@ -31,17 +31,17 @@ export default function ProfilePage() {
         if (docSnap.exists()) {
           const data = docSnap.data();
           setFormData({
-            name: data.name || user.displayName || '',
+            name: data.name || (user as any).displayName || '',
             cedula: data.cedula || '',
             phone: data.phone || '',
-            photoURL: data.photoURL || user.photoURL || ''
+            photoURL: data.photoURL || (user as any).photoURL || ''
           });
         } else {
           setFormData({
-            name: user.displayName || '',
+            name: (user as any).displayName || '',
             cedula: '',
             phone: '',
-            photoURL: user.photoURL || ''
+            photoURL: (user as any).photoURL || ''
           });
         }
       } catch (err) {
