@@ -262,7 +262,7 @@ export default function InventoryManager() {
     let importedCount = 0;
     for (const row of jsonData) {
       const sku = row.SKU || row.sku;
-      const nombre = row.Nombre || row.name || row.type || row.Producto;
+      const nombre = row['Nombre del Producto'] || row.Nombre || row.name || row.type || row.Producto;
       
       if (!sku || !nombre) continue;
       
