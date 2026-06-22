@@ -1,13 +1,13 @@
 import { useEffect, useState } from 'react';
 import { db } from '../../../lib/firebase';
-import { collection, query, orderBy, onSnapshot, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, getDoc } from 'firebase/firestore';
 
 export default function OrdersTab() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+    const q = query(collection(db, 'pedidos'), orderBy('createdAt', 'desc'));
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const ordersData = snapshot.docs.map(doc => ({
         id: doc.id,
@@ -20,9 +20,24 @@ export default function OrdersTab() {
     return () => unsubscribe();
   }, []);
 
-  const handleStatusChange = async (orderId: string, newStatus: string) => {
+  const handleStatusChange = async (orderId: string, newStatus: string, currentOrder: any) => {
     try {
-      const orderRef = doc(db, 'orders', orderId);
+      const orderRef = doc(db, 'pedidos', orderId);
+      
+      // Restaurar inventario si se cancela el pedido
+      if (newStatus === 'Cancelado' && currentOrder.status !== 'Cancelado') {
+        if (currentOrder.items && currentOrder.items.length > 0) {
+          for (const item of currentOrder.items) {
+            const productRef = doc(db, 'products', item.productId);
+            const snap = await getDoc(productRef);
+            if (snap.exists()) {
+              const currentStock = snap.data().stock || 0;
+              await updateDoc(productRef, { stock: currentStock + (item.quantity || 1) });
+            }
+          }
+        }
+      }
+      
       await updateDoc(orderRef, { status: newStatus });
     } catch (error) {
       console.error("Error updating status: ", error);
@@ -55,23 +70,27 @@ export default function OrdersTab() {
               <div className="bg-surface-container-low p-4 border-b border-outline-variant flex justify-between items-center flex-wrap gap-4">
                 <div>
                   <span className="text-xs text-text-secondary uppercase tracking-widest font-bold">Orden #{order.id.slice(0, 8)}</span>
-                  <p className="font-bold text-primary">{order.userEmail}</p>
+                  <p className="font-bold text-primary">{order.customerInfo?.name || order.customerName || order.userEmail || 'Cliente Anónimo'}</p>
+                  <p className="text-sm text-text-secondary">{order.customerInfo?.email} | {order.customerInfo?.phone}</p>
                 </div>
                 <div className="flex items-center gap-4">
                   <div className="text-right">
-                    <span className="text-xs text-text-secondary block">Total</span>
-                    <span className="font-bold text-vibrant-teal text-lg">€{order.total?.toFixed(2) || '0.00'}</span>
+                    <span className="text-xs text-text-secondary block">Total Estimado</span>
+                    <span className="font-bold text-vibrant-teal text-lg">
+                      {order.currency === 'USD' ? '$' : '€'}{order.subtotalBase?.toFixed(2) || order.total?.toFixed(2) || '0.00'}
+                    </span>
                   </div>
                   <select 
                     value={order.status}
-                    onChange={(e) => handleStatusChange(order.id, e.target.value)}
+                    onChange={(e) => handleStatusChange(order.id, e.target.value, order)}
                     className={`font-bold text-sm p-2 rounded-lg border-2 ${
                       order.status === 'Facturado' ? 'bg-success-green/10 text-success-green border-success-green/30' :
                       order.status === 'Procesando' ? 'bg-vibrant-blue/10 text-vibrant-blue border-vibrant-blue/30' :
+                      order.status === 'Cancelado' ? 'bg-error/10 text-error border-error/30' :
                       'bg-vibrant-orange/10 text-vibrant-orange border-vibrant-orange/30'
                     }`}
                   >
-                    <option value="En revisión">En revisión</option>
+                    <option value="PENDING">PENDING (En revisión)</option>
                     <option value="Procesando">Procesando</option>
                     <option value="Facturado">Facturado</option>
                     <option value="Cancelado">Cancelado</option>
@@ -85,37 +104,24 @@ export default function OrdersTab() {
                   {order.items?.map((item: any, idx: number) => (
                     <div key={idx} className="flex flex-col md:flex-row gap-4 justify-between border border-outline-variant rounded-lg p-4 bg-surface-canvas">
                       <div>
-                        <p className="font-bold text-primary">Sello {item.model?.type || 'Personalizado'} x{item.quantity || 1}</p>
-                        <p className="text-sm text-text-secondary mt-1">Texto: <span className="italic">"{item.text || 'Sin texto'}"</span></p>
-                        <p className="text-sm text-text-secondary">Tipografía seleccionada: {item.fontFamily}</p>
+                        <p className="font-bold text-primary">{item.productName || item.model?.type || 'Personalizado'} x{item.quantity || 1}</p>
+                        <p className="text-sm text-text-secondary mt-1">Texto: <span className="italic">"{item.customText || item.text || 'Sin texto'}"</span></p>
+                        {order.notes && <p className="text-sm text-text-secondary mt-2"><b>Notas del cliente:</b> {order.notes}</p>}
+                        
+                        <p className="text-xs text-text-secondary mt-2">
+                          <b>Entrega:</b> {order.deliveryMethod === 'DELIVERY' ? `Delivery a ${order.deliveryDetails?.city || ''}` : `Retiro en ${order.pickupDetails?.branch || 'Tienda'}`}
+                        </p>
                       </div>
-                      <div className="flex gap-2">
-                        {item.fontFileUrl ? (
+                      <div className="flex gap-2 items-start">
+                        {item.logoUrl || item.logoFileUrl ? (
                           <a 
-                            href={item.fontFileUrl} 
-                            target="_blank" 
-                            rel="noreferrer"
-                            className="bg-primary text-white px-4 py-2 rounded font-bold text-sm flex items-center gap-2 hover:bg-primary/90 transition-colors shadow-sm"
-                          >
-                            <span className="material-symbols-outlined text-sm">download</span>
-                            Descargar Fuente
-                          </a>
-                        ) : (
-                          <span className="bg-surface-container text-text-secondary px-4 py-2 rounded font-bold text-sm flex items-center gap-2 border border-outline-variant">
-                            <span className="material-symbols-outlined text-sm">font_download</span>
-                            Fuente Nativa
-                          </span>
-                        )}
-
-                        {item.logoFileUrl ? (
-                          <a 
-                            href={item.logoFileUrl} 
+                            href={item.logoUrl || item.logoFileUrl} 
                             target="_blank" 
                             rel="noreferrer"
                             className="bg-vibrant-teal text-white px-4 py-2 rounded font-bold text-sm flex items-center gap-2 hover:bg-vibrant-teal/90 transition-colors shadow-sm"
                           >
                             <span className="material-symbols-outlined text-sm">image</span>
-                            Descargar Logo
+                            Ver Logo Adjunto
                           </a>
                         ) : (
                           <span className="bg-surface-container text-text-secondary px-4 py-2 rounded font-bold text-sm flex items-center gap-2 border border-outline-variant">
